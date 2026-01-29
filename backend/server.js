@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3008;
 
 // Middleware
 app.use(cors());
@@ -36,14 +36,14 @@ function parseTasksFromMarkdown(content) {
       inTaskSection = true;
       return;
     }
-    if (inTaskSection && line.startsWith('## ')) {
+    if (inTaskSection && line.startsWith('##')) {
       inTaskSection = false;
       return;
     }
-    if (inTaskSection && line.match(/^\s*[-•]\s*\[([ x])\]/)) {
-      const completed = line.includes('[x]');
-      const text = line.replace(/^\s*[-•]\s*\[[^\]]*\]\s*/, '').trim();
-      if (text) {
+    if (inTaskSection && line.match(/^\s*[-•]/)) {
+      const completed = line.includes('✅');
+      const text = line.replace(/^\s*[-•]\s*/, '').replace(/\s*✅\s*$/, '').trim();
+      if (text && !text.startsWith('*')) {
         tasks.push({
           id: ++id,
           text,
