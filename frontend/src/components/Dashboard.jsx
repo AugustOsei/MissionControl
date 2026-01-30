@@ -1,10 +1,7 @@
 import React from 'react';
-import QuickStats from './QuickStats';
-import TaskList from './TaskList';
-import ProjectsList from './ProjectsList';
+import Kanban from './Kanban';
 import RemindersPanel from './RemindersPanel';
-import InsightsPanel from './InsightsPanel';
-import IntegrationStatus from './IntegrationStatus';
+import IdeasPanel from './IdeasPanel';
 
 function Dashboard({ data }) {
   const now = new Date().toLocaleDateString('en-US', {
@@ -15,38 +12,47 @@ function Dashboard({ data }) {
   });
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Header */}
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold mb-2">🎯 Mission Control</h1>
-        <p className="text-gray-400">August Wheel Operations Dashboard</p>
-        <p className="text-sm text-gray-500 mt-2">{now}</p>
-      </div>
-
-      {/* Quick Stats */}
-      <QuickStats stats={data.stats} />
-
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-        {/* Left Column - Tasks & Projects */}
-        <div className="lg:col-span-2 space-y-8">
-          <TaskList tasks={data.tasks} />
-          <ProjectsList projects={data.projects} />
-        </div>
-
-        {/* Right Column - Sidebar */}
-        <div className="space-y-8">
-          <RemindersPanel reminders={data.reminders} />
-          <InsightsPanel insights={data.insights} />
-          <IntegrationStatus integrations={data.integrations} />
+      <div className="bg-slate-900 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-8 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-1">
+                ⚙️ Mission Control
+              </h1>
+              <p className="text-sm text-slate-400">{now}</p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>Live</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="mt-12 pt-8 border-t border-gray-700">
-        <p className="text-gray-500 text-sm">
-          Last updated: {new Date().toLocaleTimeString()} | Next briefing: 8:00 AM
-        </p>
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-8 py-12">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Left - Kanban Board */}
+          <div className="lg:col-span-3">
+            <Kanban tasks={data.tasks} />
+          </div>
+
+          {/* Right Sidebar - Reminders & Ideas */}
+          <div className="space-y-6">
+            <RemindersPanel reminders={data.reminders} />
+            <IdeasPanel insights={data.insights} />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-12 pt-6 border-t border-slate-800">
+          <p className="text-slate-500 text-xs">
+            Last updated: {new Date().toLocaleTimeString()} — Next briefing: 8:00 AM UTC
+          </p>
+        </div>
       </div>
     </div>
   );
