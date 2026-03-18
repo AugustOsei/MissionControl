@@ -1,117 +1,30 @@
-# Mission Control - August Wheel Dashboard
+# Mission Control (v2 rewrite)
 
-🚀 Real-time dashboard for managing August Wheel business operations.
+This is **Mission Control v2**: a nerdy ops/work cockpit.
 
-## Features
+- **Work plane**: Notion-backed Projects + Tasks
+- **Ops plane**: OpenClaw gateway (sessions / crons / cost)
+- **UI**: Next.js app intended for deployment at `mc.taskcocoon.com`
 
-- 📊 Quick statistics overview
-- 📋 Task management
-- 🎯 Active project tracking
-- ⏰ Upcoming reminders
-- 💡 AI insights and recommendations
-- 🔧 Integration status monitoring
-- 🔄 Real-time data refresh
-
-## Tech Stack
-
-- **Frontend:** React 18 + Vite + Tailwind CSS
-- **Backend:** Node.js + Express
-- **Deployment:** Vercel
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-
-### Installation
+## Local dev
 
 ```bash
-# Install all dependencies
-npm run install:all
-
-# Or install separately
-npm run backend:install
-npm run frontend:install
-```
-
-### Development
-
-```bash
-# Start both backend and frontend
+npm install
+cp .env.example .env.local
 npm run dev
-
-# Or start separately
-npm run backend:dev  # Terminal 1
-npm run frontend:dev # Terminal 2
 ```
 
-### Build for Production
+## Environment variables
 
-```bash
-npm run build
-```
+- `NOTION_API_KEY` – Notion integration token
+- `NOTION_TASKS_DB` – Notion Tasks database id
+- `NOTION_PROJECTS_DB` – Notion Projects database id
+- `OPENCLAW_GATEWAY_URL` – e.g. `https://gateway.taskcocoon.com` (after tunnel)
 
-## Deployment
+## Roadmap (near-term)
 
-### Deploy to Vercel
-
-1. Push code to GitHub
-2. Connect to Vercel
-3. Set environment variables:
-   - `VITE_API_URL`: Backend API URL
-4. Deploy!
-
-## Project Structure
-
-```
-mission-control/
-├── frontend/          # React app
-│   ├── src/
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.js
-│   └── tailwind.config.js
-├── backend/           # Express API
-│   ├── server.js
-│   ├── routes/
-│   ├── controllers/
-│   └── package.json
-├── package.json       # Root monorepo config
-└── README.md
-```
-
-## API Endpoints
-
-- `GET /api/stats` - Quick statistics
-- `GET /api/tasks` - Weekly tasks
-- `GET /api/projects` - Active projects
-- `GET /api/reminders` - Upcoming reminders
-- `GET /api/integrations` - Integration status
-- `GET /api/insights` - August's insights
-- `POST /api/tasks` - Create new task
-- `PUT /api/tasks/:id` - Update task
-
-## Data Sources
-
-- Task files from `/home/trader/clawd/task-capture/`
-- Reminders from `/home/trader/clawd/briefings/`
-- Projects and context from `/home/trader/clawd/MEMORY.md`
-
-## Next Features
-
-- Real-time WebSocket updates
-- Task editing and deletion
-- Project management
-- Analytics charts
-- User authentication
-- Email integration
-
-## License
-
-MIT
-
----
-
-**Built with ❤️ for August Wheel by August (AI Assistant)**
+- Drag/drop board (dnd)
+- Task status updates → Notion
+- Projects drilldown (Parent → L1 → L2 → detail)
+- Live Activity feed (ops + work + content)
+- Cloudflare Tunnel + Access for `gateway.taskcocoon.com`
