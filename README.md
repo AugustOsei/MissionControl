@@ -1,10 +1,15 @@
-# Mission Control (v2 rewrite)
+# Mission Control
 
-This is **Mission Control v2**: a nerdy ops/work cockpit.
+A nerdy ops/work cockpit.
 
 - **Work plane**: Notion-backed Projects + Tasks
-- **Ops plane**: OpenClaw gateway (sessions / crons / cost)
-- **UI**: Next.js app intended for deployment at `mc.taskcocoon.com`
+- **Ops plane**: OpenClaw gateway + Notion Cron Monitor (initially)
+- **UI**: Next.js app deployed on Vercel (production: `mc.taskcocoon.com`)
+
+## Read first
+
+- Architecture: `./ARCHITECTURE.md`
+- Change log / handoff notes: `./CHANGELOG.md`
 
 ## Local dev
 
@@ -16,15 +21,10 @@ npm run dev
 
 ## Environment variables
 
-- `NOTION_API_KEY` – Notion integration token
-- `NOTION_TASKS_DB` – Notion Tasks database id
-- `NOTION_PROJECTS_DB` – Notion Projects database id
-- `OPENCLAW_GATEWAY_URL` – e.g. `https://gateway.taskcocoon.com` (after tunnel)
+Only env var **names** are stored in this repo (it’s public). Set values in Vercel.
 
-## Roadmap (near-term)
-
-- Drag/drop board (dnd)
-- Task status updates → Notion
-- Projects drilldown (Parent → L1 → L2 → detail)
-- Live Activity feed (ops + work + content)
-- Cloudflare Tunnel + Access for `gateway.taskcocoon.com`
+- `NOTION_API_KEY`
+- `NOTION_TASKS_DB`
+- `NOTION_PROJECTS_DB`
+- `NOTION_CRON_DB`
+- `OPENCLAW_GATEWAY_URL`
