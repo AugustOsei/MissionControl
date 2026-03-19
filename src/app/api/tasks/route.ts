@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       parent: { database_id: db },
       properties: {
         Name: { title: [{ text: { content: title.trim() } }] },
-        Status: { status: { name: status } },
+        Status: { select: { name: status } },
       },
     }),
   });

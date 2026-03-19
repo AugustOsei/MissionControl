@@ -23,7 +23,7 @@ export async function PATCH(
     },
     body: JSON.stringify({
       properties: {
-        Status: { status: { name: status } },
+        Status: { select: { name: status } },
       },
     }),
   });
