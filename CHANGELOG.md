@@ -6,3 +6,4 @@ This is a lightweight “what changed” log for fast handoffs and future upgrad
 - Gateway origin allowlist added in OpenClaw config to support reverse-proxy access.
 - Ops page: Cron Monitor sourced from Notion Cron Monitor DB (counts + table).
 - Fixed Notion task writes: Tasks DB `Status` is **select** (not Notion “status”), so create/update now use `select` payload.
+- Projects page: project detail modal (slick) + edit pillar/level/parent + list related tasks (by Notion relation: `Project`).

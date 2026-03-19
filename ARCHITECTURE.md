@@ -55,6 +55,8 @@ Used by:
 ### Routes (API)
 - `POST /api/tasks` — create task in Notion
 - `PATCH /api/tasks/[id]` — update task status in Notion
+- `PATCH /api/projects/[id]` — update project fields (pillar/level/parent) in Notion
+- `GET /api/projects/[id]/tasks` — list tasks related to a project (Notion relation: `Project`)
 - `GET /api/activity` — activity feed (currently derived from recent Notion task edits)
 
 ## Security / Secrets
