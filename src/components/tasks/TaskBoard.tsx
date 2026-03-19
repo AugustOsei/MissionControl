@@ -1,13 +1,75 @@
+"use client";
+
+import { useState } from "react";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import type { Task } from "@/lib/notion/tasks";
 
 const COLS = [
-  { key: "Backlog", title: "Backlog" },
-  { key: "Todo", title: "Todo" },
-  { key: "Doing", title: "Doing" },
-  { key: "Done", title: "Done" },
+  { key: "Backlog",  title: "Backlog" },
+  { key: "Todo",     title: "Todo" },
+  { key: "Doing",    title: "Doing" },
+  { key: "Done",     title: "Done" },
   { key: "Archived", title: "Archived" },
 ] as const;
+
+const DEFAULT_VISIBLE = 5;
+
+const STATUS_STYLE: Record<string, { border: string; text: string; dot: string; pulse: boolean }> = {
+  Backlog:  { border: "border-slate-500/30",  text: "text-slate-400",  dot: "bg-slate-400",  pulse: false },
+  Todo:     { border: "border-blue-500/35",   text: "text-blue-400",   dot: "bg-blue-400",   pulse: false },
+  Doing:    { border: "border-amber-500/40",  text: "text-amber-400",  dot: "bg-amber-400",  pulse: true  },
+  Done:     { border: "border-green-500/35",  text: "text-green-400",  dot: "bg-green-400",  pulse: false },
+  Archived: { border: "border-white/8",       text: "text-white/30",   dot: "bg-white/30",   pulse: false },
+};
+
+function Column({ colKey, title, tasks }: { colKey: string; title: string; tasks: Task[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? tasks : tasks.slice(0, DEFAULT_VISIBLE);
+  const hidden = tasks.length - DEFAULT_VISIBLE;
+  const style = STATUS_STYLE[colKey] ?? STATUS_STYLE.Backlog;
+
+  return (
+    <div className={`rounded-xl border ${style.border} bg-white/[0.03]`}>
+      <div className="flex items-center justify-between border-b border-white/8 px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <span className={`h-2 w-2 rounded-full ${style.dot} ${style.pulse ? "animate-pulse" : ""}`} />
+          <span className={`text-sm font-medium ${style.text}`}>{title}</span>
+        </div>
+        <div className="text-xs text-white/30 font-mono">{tasks.length}</div>
+      </div>
+
+      <div className="space-y-2 p-2">
+        {visible.map((t) => (
+          <TaskCard key={t.id} task={t} />
+        ))}
+
+        {tasks.length === 0 && (
+          <div className="rounded-lg border border-dashed border-white/8 p-3 text-xs text-white/25 text-center font-mono">
+            empty
+          </div>
+        )}
+
+        {!expanded && hidden > 0 && (
+          <button
+            onClick={() => setExpanded(true)}
+            className="w-full rounded-lg border border-dashed border-white/10 py-2 text-xs text-white/35 hover:border-white/20 hover:text-white/55 transition-colors font-mono"
+          >
+            +{hidden} more
+          </button>
+        )}
+
+        {expanded && tasks.length > DEFAULT_VISIBLE && (
+          <button
+            onClick={() => setExpanded(false)}
+            className="w-full rounded-lg border border-dashed border-white/10 py-2 text-xs text-white/35 hover:border-white/20 hover:text-white/55 transition-colors font-mono"
+          >
+            show less
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function TaskBoard({ tasks }: { tasks: Task[] }) {
   const byStatus = new Map<string, Task[]>();
@@ -28,7 +90,7 @@ export function TaskBoard({ tasks }: { tasks: Task[] }) {
         <div className="card">
           <div className="cardTitle">This week</div>
           <div className="cardValue">{tasks.filter((t) => t.isThisWeek).length}</div>
-          <div className="cardSub">created/updated</div>
+          <div className="cardSub">updated</div>
         </div>
         <div className="card">
           <div className="cardTitle">In progress</div>
@@ -49,23 +111,7 @@ export function TaskBoard({ tasks }: { tasks: Task[] }) {
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
         {COLS.map((c) => (
-          <div key={c.key} className="rounded-xl border border-white/10 bg-white/5">
-            <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
-              <div className="text-sm font-medium text-white/80">{c.title}</div>
-              <div className="text-xs text-white/40">{byStatus.get(c.key)!.length}</div>
-            </div>
-
-            <div className="space-y-2 p-2">
-              {byStatus.get(c.key)!.map((t) => (
-                <TaskCard key={t.id} task={t} />
-              ))}
-              {byStatus.get(c.key)!.length === 0 && (
-                <div className="rounded-lg border border-dashed border-white/10 p-3 text-xs text-white/30">
-                  Empty
-                </div>
-              )}
-            </div>
-          </div>
+          <Column key={c.key} colKey={c.key} title={c.title} tasks={byStatus.get(c.key)!} />
         ))}
       </div>
     </div>

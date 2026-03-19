@@ -13,31 +13,74 @@
 }
 
 body {
-  background: radial-gradient(1200px 600px at 30% -10%, rgba(96, 165, 250, 0.14), transparent 55%),
-    radial-gradient(900px 520px at 80% 0%, rgba(34, 197, 94, 0.10), transparent 60%),
-    var(--background);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(1200px 600px at 30% -10%, rgba(96, 165, 250, 0.12), transparent 55%),
+    radial-gradient(900px 520px at 80% 0%, rgba(34, 197, 94, 0.08), transparent 60%),
+    radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: auto, auto, 28px 28px;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans, Arial, sans-serif);
 }
 
-/* little nerdy “panel” system */
+/* ── Panel cards ── */
 .card {
-  @apply rounded-xl border border-white/10 bg-white/5 p-4;
+  @apply rounded-xl border border-white/10 bg-white/[0.04] p-4;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 9999px 0 0 9999px;
+  background: rgba(96, 165, 250, 0.5);
 }
 
 .cardTitle {
-  @apply text-xs text-white/50;
+  @apply text-xs text-white/50 uppercase tracking-widest font-mono;
 }
 
 .cardValue {
-  @apply mt-1 text-2xl font-semibold text-white;
+  @apply mt-1 text-2xl font-semibold text-white font-mono;
 }
 
 .cardSub {
-  @apply mt-1 text-xs text-white/40;
+  @apply mt-1 text-xs text-white/40 font-mono;
 }
 
-/* ornament: globe */
+/* ── Priority badges ── */
+.badge-urgent {
+  @apply rounded-full px-2 py-0.5 text-[11px] font-mono border;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.badge-high {
+  @apply rounded-full px-2 py-0.5 text-[11px] font-mono border;
+  background: rgba(249, 115, 22, 0.15);
+  color: #fb923c;
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+.badge-medium {
+  @apply rounded-full px-2 py-0.5 text-[11px] font-mono border;
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.badge-low {
+  @apply rounded-full px-2 py-0.5 text-[11px] font-mono border;
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border-color: rgba(100, 116, 139, 0.3);
+}
+
+/* ── Globe ornament ── */
 .mc-globe {
   filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.25));
 }
@@ -58,22 +101,11 @@ body {
 }
 
 @keyframes mcSpin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 @keyframes mcPulse {
-  0%,
-  100% {
-    transform: scale(0.98);
-    opacity: 0.75;
-  }
-  50% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
+  0%, 100% { transform: scale(0.98); opacity: 0.75; }
+  50%       { transform: scale(1.08); opacity: 1; }
 }

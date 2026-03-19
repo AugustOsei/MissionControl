@@ -1,4 +1,4 @@
-import { notionQueryDatabase, requireEnv } from "@/lib/notion/client";
+import { notionQueryDatabase } from "@/lib/notion/client";
 
 export type ProjectNode = {
   id: string;
@@ -15,19 +15,17 @@ function plainTitle(prop: any): string {
 }
 
 function selectName(prop: any): string | undefined {
-  const s = prop?.select;
-  return s?.name;
+  return prop?.select?.name;
 }
 
 function relationFirstId(prop: any): string | undefined {
-  const r = prop?.relation ?? [];
-  return r[0]?.id;
+  return (prop?.relation ?? [])[0]?.id;
 }
 
-export async function getProjectsTree(): Promise<{ parents: ProjectNode[] }> {
-  const db = requireEnv("NOTION_PROJECTS_DB");
-
-  const res = await notionQueryDatabase(db, {
+export async function getProjectsTreeForDb(
+  databaseId: string
+): Promise<{ parents: ProjectNode[] }> {
+  const res = await notionQueryDatabase(databaseId, {
     page_size: 100,
     sorts: [{ property: "Name", direction: "ascending" }],
   });
@@ -57,4 +55,11 @@ export async function getProjectsTree(): Promise<{ parents: ProjectNode[] }> {
     .concat(roots.filter((r) => r.level !== "Parent"));
 
   return { parents };
+}
+
+// Keep for backwards compat
+export async function getProjectsTree() {
+  const { requireEnv } = await import("@/lib/notion/client");
+  const db = requireEnv("NOTION_PROJECTS_DB");
+  return getProjectsTreeForDb(db);
 }
