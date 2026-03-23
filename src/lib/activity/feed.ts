@@ -1,4 +1,5 @@
 import { getCronMonitorRows } from "@/lib/notion/crons";
+import { getOpsEvents } from "@/lib/notion/opsEvents";
 import { getTasksForBoard } from "@/lib/notion/tasks";
 
 export type ActivityItem = {
@@ -28,6 +29,13 @@ export async function getActivityFeed(): Promise<{ items: ActivityItem[] }> {
     // env not configured
   }
 
+  let opsEvents = [] as Awaited<ReturnType<typeof getOpsEvents>>;
+  try {
+    opsEvents = await getOpsEvents(8);
+  } catch {
+    // env not configured
+  }
+
   const taskItems: ActivityItem[] = tasks.slice(0, 10).map((t) => ({
     id: `task:${t.id}`,
     title: `Task updated: ${t.title}`,
@@ -53,7 +61,21 @@ export async function getActivityFeed(): Promise<{ items: ActivityItem[] }> {
       };
     });
 
-  const items = [...cronItems, ...taskItems].slice(0, 12);
+  const opsItems: ActivityItem[] = opsEvents.slice(0, 6).map((e) => {
+    const lvl = (e.level ?? "").toLowerCase();
+    const tone = lvl === "error" ? "#ef4444" : lvl === "ok" ? "#22c55e" : lvl === "warn" ? "#f59e0b" : "#a78bfa";
+    const src = (e.source ?? "ops").toUpperCase();
+    const headline = e.jobName ? `${e.jobName}` : e.name;
+    const msg = e.message ? ` — ${e.message}` : "";
+    return {
+      id: `ops:${e.id}`,
+      title: `${src}: ${headline}${msg}`,
+      time: e.time ?? "",
+      color: tone,
+    };
+  });
+
+  const items = [...opsItems, ...cronItems, ...taskItems].slice(0, 12);
 
   if (items.length === 0) {
     items.push({

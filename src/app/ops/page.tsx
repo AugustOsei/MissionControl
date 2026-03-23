@@ -1,4 +1,5 @@
 import { getCronMonitorRows, summarizeCronRows } from "@/lib/notion/crons";
+import { getOpsEvents } from "@/lib/notion/opsEvents";
 import { getOpenClawOpsSnapshot } from "@/lib/openclaw/ops";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,8 @@ export default async function OpsPage() {
 
   const cronRows = await getCronMonitorRows().catch(() => []);
   const cronSummary = summarizeCronRows(cronRows);
+
+  const opsEvents = await getOpsEvents(25).catch(() => []);
 
   const now = Date.now();
   const errorRows = cronRows.filter((r) => (r.lastStatus ?? "").toLowerCase() === "error");
@@ -111,14 +114,15 @@ export default async function OpsPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-white/10 bg-white/5">
-        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-          <div>
-            <div className="text-sm font-semibold">Cron Monitor</div>
-            <div className="text-xs text-white/50">Notion-backed</div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-white/10 bg-white/5">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <div>
+              <div className="text-sm font-semibold">Cron Monitor</div>
+              <div className="text-xs text-white/50">Notion-backed</div>
+            </div>
+            <div className="text-xs text-white/50">rows: {cronRows.length}</div>
           </div>
-          <div className="text-xs text-white/50">rows: {cronRows.length}</div>
-        </div>
 
         <div className="overflow-auto">
           <table className="min-w-full text-sm">
@@ -163,10 +167,72 @@ export default async function OpsPage() {
             </tbody>
           </table>
         </div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-white/5">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <div>
+              <div className="text-sm font-semibold">Ops Events</div>
+              <div className="text-xs text-white/50">Cron + Telegram excerpts (Notion-backed)</div>
+            </div>
+            <div className="text-xs text-white/50">rows: {opsEvents.length}</div>
+          </div>
+
+          <div className="divide-y divide-white/10">
+            {opsEvents.slice(0, 20).map((e) => {
+              const lvl = (e.level ?? "").toLowerCase();
+              const badge =
+                lvl === "error"
+                  ? "border-red-500/30 bg-red-500/10 text-red-200"
+                  : lvl === "ok"
+                    ? "border-green-500/30 bg-green-500/10 text-green-200"
+                    : lvl === "warn"
+                      ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
+                      : "border-white/10 bg-white/5 text-white/60";
+
+              return (
+                <div key={e.id} className="px-4 py-3 hover:bg-white/5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm text-white/85 truncate">
+                        {(e.source ?? "ops").toUpperCase()}: {e.jobName || e.name}
+                      </div>
+                      {e.message && (
+                        <div className="mt-1 text-xs text-white/55 line-clamp-2">{e.message}</div>
+                      )}
+                      {e.link && (
+                        <a
+                          className="mt-1 inline-block text-xs font-mono text-blue-300/80 hover:text-blue-200"
+                          href={e.link}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          link ↗
+                        </a>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className={"rounded-full border px-2 py-1 text-[11px] font-mono " + badge}>
+                        {e.level ?? "—"}
+                      </div>
+                      <div className="mt-1 text-[11px] font-mono text-white/35">{shortDate(e.time)}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {opsEvents.length === 0 && (
+              <div className="px-4 py-6 text-xs text-white/40">
+                No ops events yet. (Set NOTION_OPS_EVENTS_DB in Vercel env vars, then start logging.)
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <pre className="rounded-lg border border-white/10 bg-black/40 p-3 text-xs text-white/70 overflow-auto">
-{JSON.stringify({ ops, cronSummary }, null, 2)}
+{JSON.stringify({ ops, cronSummary, opsEventsCount: opsEvents.length }, null, 2)}
       </pre>
     </div>
   );

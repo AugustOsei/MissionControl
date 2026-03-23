@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+// NOTE: HudClock is used in the top bar. Tasks page also has a larger YearCountdown card.
 import { HudClock } from "@/components/ornaments/HudClock";
 
 function Avatar() {
