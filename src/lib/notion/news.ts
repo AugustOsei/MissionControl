@@ -9,6 +9,7 @@ export type NewsItem = {
   url?: string;
   submittedAt?: string;
   pillar?: string;
+  businessValue?: string;
 };
 
 function plainTitle(prop: unknown): string {
@@ -37,12 +38,10 @@ export async function getNewsFeed(limit = 50): Promise<NewsItem[]> {
 
   const res = await notionQueryDatabase(db, {
     page_size: Math.min(100, Math.max(1, limit)),
-    sorts: [{ property: "Name", direction: "descending" }],
+    // Prefer Submitted at (desc). If it's empty for some rows, Notion will push them down.
+    sorts: [{ property: "Submitted at", direction: "descending" }],
     filter: {
-      and: [
-        { property: "Type", select: { equals: "Link post" } },
-        // optional: only show Ready + Idea
-      ],
+      and: [{ property: "Type", select: { equals: "Link post" } }],
     },
   });
 
@@ -57,6 +56,7 @@ export async function getNewsFeed(limit = 50): Promise<NewsItem[]> {
       url: urlValue(props["Canonical URL"]) ?? urlValue(props["Source URL"]) ?? urlValue(props["WordPress URL"]),
       submittedAt: dateStart(props["Submitted at"]) ?? dateStart(props["Publish date"]) ?? undefined,
       pillar: selectName(props.Pillar),
+      businessValue: selectName(props["Business Value"]),
     };
   });
 }
