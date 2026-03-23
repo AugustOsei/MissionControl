@@ -45,6 +45,18 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    href: "/news",
+    label: "News",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3" opacity="0.7" />
+        <rect x="4" y="5" width="8" height="1.4" rx="0.7" fill="currentColor" opacity="0.6" />
+        <rect x="4" y="8" width="6.5" height="1.4" rx="0.7" fill="currentColor" opacity="0.55" />
+        <rect x="4" y="11" width="7.5" height="1.4" rx="0.7" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
 ];
 
 function NavItems({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
