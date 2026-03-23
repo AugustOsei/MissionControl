@@ -6,6 +6,11 @@ export type ProjectNode = {
   pillar?: string;
   level?: string;
   parentId?: string;
+  quickSummary?: string;
+  appUrl?: string;
+  repoUrl?: string;
+  docsUrl?: string;
+  url?: string; // Notion page URL
   children: ProjectNode[];
 };
 
@@ -16,6 +21,16 @@ function plainTitle(prop: any): string {
 
 function selectName(prop: any): string | undefined {
   return prop?.select?.name;
+}
+
+function richTextPlain(prop: any): string | undefined {
+  const t = prop?.rich_text ?? [];
+  const s = t.map((x: any) => x.plain_text).join("").trim();
+  return s || undefined;
+}
+
+function urlValue(prop: any): string | undefined {
+  return prop?.url || undefined;
 }
 
 function relationFirstId(prop: any): string | undefined {
@@ -38,6 +53,11 @@ export async function getProjectsTreeForDb(
       pillar: selectName(props.Pillar),
       level: selectName(props.Level),
       parentId: relationFirstId(props["Parent Project"]),
+      quickSummary: richTextPlain(props["Quick Summary"]) ?? richTextPlain(props.Notes),
+      appUrl: urlValue(props["App URL"]) ?? urlValue(props.URL),
+      repoUrl: urlValue(props["Repo URL"]),
+      docsUrl: urlValue(props["Docs URL"]) ?? urlValue(props["Strategy Doc"]),
+      url: page.url,
       children: [],
     };
   });

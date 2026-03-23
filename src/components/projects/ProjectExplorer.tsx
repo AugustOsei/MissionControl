@@ -10,6 +10,11 @@ export type FlatProject = {
   pillar?: string;
   level?: string;
   parentId?: string;
+  quickSummary?: string;
+  appUrl?: string;
+  repoUrl?: string;
+  docsUrl?: string;
+  url?: string;
 };
 
 function flatten(nodes: ProjectNode[]): FlatProject[] {
@@ -23,6 +28,11 @@ function flatten(nodes: ProjectNode[]): FlatProject[] {
       pillar: n.pillar,
       level: n.level,
       parentId: n.parentId,
+      quickSummary: n.quickSummary,
+      appUrl: n.appUrl,
+      repoUrl: n.repoUrl,
+      docsUrl: n.docsUrl,
+      url: n.url,
     });
     for (const c of n.children) stack.push(c);
   }

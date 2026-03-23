@@ -163,6 +163,57 @@ export function ProjectModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+          {/* Summary card */}
+          {(project.quickSummary || project.appUrl || project.repoUrl || project.docsUrl) && (
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Summary</div>
+                  {project.quickSummary ? (
+                    <div className="mt-2 text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
+                      {project.quickSummary}
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-xs font-mono text-white/35">No summary yet (fill Quick Summary in Notion).</div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {project.appUrl && (
+                  <a
+                    href={project.appUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-mono text-blue-200 hover:bg-blue-500/15"
+                  >
+                    Open app ↗
+                  </a>
+                )}
+                {project.repoUrl && (
+                  <a
+                    href={project.repoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-mono text-purple-200 hover:bg-purple-500/15"
+                  >
+                    Repo ↗
+                  </a>
+                )}
+                {project.docsUrl && (
+                  <a
+                    href={project.docsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-mono text-amber-200 hover:bg-amber-500/15"
+                  >
+                    Docs ↗
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
               <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Pillar</div>
@@ -224,14 +275,46 @@ export function ProjectModal({
             {ok && <div className="text-xs font-mono text-green-400">✓ Updated</div>}
             {error && <div className="text-xs font-mono text-red-400">{error}</div>}
             <div className="flex-1" />
-            <a
-              href={`https://notion.so/${project.id.replace(/-/g, "")}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-mono text-white/35 hover:text-white/60"
-            >
-              Open in Notion ↗
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href={project.url ?? `https://notion.so/${project.id.replace(/-/g, "")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-mono text-white/35 hover:text-white/60"
+              >
+                Notion ↗
+              </a>
+              {project.appUrl && (
+                <a
+                  href={project.appUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-mono text-blue-300/80 hover:text-blue-200"
+                >
+                  App ↗
+                </a>
+              )}
+              {project.repoUrl && (
+                <a
+                  href={project.repoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-mono text-purple-300/80 hover:text-purple-200"
+                >
+                  Repo ↗
+                </a>
+              )}
+              {project.docsUrl && (
+                <a
+                  href={project.docsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-mono text-amber-200/80 hover:text-amber-100"
+                >
+                  Docs ↗
+                </a>
+              )}
+            </div>
           </div>
 
           <div className="rounded-xl border border-white/10 bg-white/[0.03]">
