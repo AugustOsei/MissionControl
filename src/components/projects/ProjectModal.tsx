@@ -245,6 +245,39 @@ export function ProjectModal({
               </div>
             </div>
 
+            {/* KPI strip */}
+            <div className="px-4 py-3 border-b border-white/8">
+              {tasks ? (
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  {(() => {
+                    const total = tasks.length;
+                    const done = tasks.filter((t) => (t.status ?? "").toLowerCase() === "done").length;
+                    const doing = tasks.filter((t) => (t.status ?? "").toLowerCase() === "doing").length;
+                    const todo = tasks.filter((t) => (t.status ?? "").toLowerCase() === "todo").length;
+                    const backlog = tasks.filter((t) => (t.status ?? "").toLowerCase() === "backlog").length;
+                    const p0p1 = tasks.filter((t) => ["p0", "p1"].includes((t.priority ?? "").toLowerCase())).length;
+                    return [
+                      { k: "Total", v: String(total), tone: "text-white/80" },
+                      { k: "Doing", v: String(doing), tone: "text-blue-300" },
+                      { k: "Done", v: String(done), tone: "text-green-300" },
+                      { k: "P0/P1", v: String(p0p1), tone: "text-amber-300" },
+                      { k: "Todo", v: String(todo), tone: "text-white/70" },
+                      { k: "Backlog", v: String(backlog), tone: "text-white/55" },
+                      { k: "Open", v: String(Math.max(0, total - done)), tone: "text-white/80" },
+                      { k: "Progress", v: total ? `${Math.round((done / total) * 100)}%` : "—", tone: "text-white/70" },
+                    ];
+                  })().slice(0, 4).map((x) => (
+                    <div key={x.k} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2">
+                      <div className="text-[10px] font-mono text-white/35 uppercase tracking-widest">{x.k}</div>
+                      <div className={`mt-0.5 text-sm font-semibold ${x.tone}`}>{x.v}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs font-mono text-white/35">Loading KPIs…</div>
+              )}
+            </div>
+
             {tasksErr && (
               <div className="px-4 py-4 text-xs font-mono text-red-400">{tasksErr}</div>
             )}

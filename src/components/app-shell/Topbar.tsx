@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { HudClock } from "@/components/ornaments/HudClock";
 
 function Avatar() {
   const [imgError, setImgError] = useState(false);
@@ -38,6 +39,7 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <HudClock />
           <div className="hidden md:flex items-center gap-1.5 rounded-lg border border-green-500/25 bg-green-500/8 px-2.5 py-1">
             <span className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)] animate-pulse" />
             <span className="text-[11px] font-mono text-green-400">live</span>
