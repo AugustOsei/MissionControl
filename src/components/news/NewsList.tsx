@@ -1,0 +1,124 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type { NewsItem } from "@/lib/notion/news";
+
+function shortDate(iso?: string) {
+  if (!iso) return "—";
+  return iso.replace("T", " ").slice(0, 16);
+}
+
+function inWindow(iso: string | undefined, days: number) {
+  if (!iso) return false;
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return false;
+  return t >= Date.now() - days * 86400 * 1000;
+}
+
+export function NewsList({ items }: { items: NewsItem[] }) {
+  const [q, setQ] = useState("");
+  const [windowDays, setWindowDays] = useState<7 | 30 | 3650>(7);
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return items
+      .filter((x) => {
+        if (windowDays !== 3650 && !inWindow(x.submittedAt, windowDays)) return false;
+        if (needle && !x.title.toLowerCase().includes(needle)) return false;
+        return true;
+      })
+      .slice(0, 200);
+  }, [items, q, windowDays]);
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="text-sm text-white/70">
+            Showing <span className="font-semibold text-white/80">{filtered.length}</span> items
+          </div>
+
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search headlines…"
+              className="w-full md:w-[280px] rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white/80 placeholder:text-white/25 outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-colors font-mono"
+            />
+
+            <select
+              value={String(windowDays)}
+              onChange={(e) => setWindowDays(Number(e.target.value) as any)}
+              className="w-full md:w-[170px] rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white/80 outline-none font-mono"
+            >
+              <option value="7" className="bg-neutral-900">
+                last 7 days
+              </option>
+              <option value="30" className="bg-neutral-900">
+                last 30 days
+              </option>
+              <option value="3650" className="bg-neutral-900">
+                all (max)
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
+        <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[11px] font-mono text-white/40 border-b border-white/10">
+          <div className="col-span-3 md:col-span-2">when</div>
+          <div className="col-span-9 md:col-span-7">headline</div>
+          <div className="hidden md:block md:col-span-3">meta</div>
+        </div>
+
+        <div className="divide-y divide-white/10">
+          {filtered.map((x) => (
+            <div key={x.id} className="grid grid-cols-12 gap-2 px-4 py-3 hover:bg-white/5">
+              <div className="col-span-3 md:col-span-2 text-[11px] font-mono text-white/35">
+                {shortDate(x.submittedAt)}
+              </div>
+
+              <div className="col-span-9 md:col-span-7 min-w-0">
+                {x.url ? (
+                  <a
+                    href={x.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-white/85 hover:text-white underline decoration-white/10 hover:decoration-white/25 transition-colors line-clamp-2"
+                  >
+                    {x.title}
+                  </a>
+                ) : (
+                  <div className="text-sm text-white/85 line-clamp-2">{x.title}</div>
+                )}
+                <div className="mt-1 text-[11px] font-mono text-white/45">
+                  {(x.source ?? "source?")}{x.pillar ? ` · ${x.pillar}` : ""}
+                </div>
+              </div>
+
+              <div className="hidden md:flex md:col-span-3 items-start justify-end gap-2 text-[11px] font-mono">
+                {x.businessValue && (
+                  <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-amber-200">
+                    {x.businessValue}
+                  </span>
+                )}
+                {x.status && (
+                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/60">
+                    {x.status}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {filtered.length === 0 && (
+            <div className="px-4 py-10 text-center text-sm text-white/35 font-mono">
+              No news items match.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
