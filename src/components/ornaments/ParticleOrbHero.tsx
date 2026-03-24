@@ -114,9 +114,9 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
     orbGeo.setAttribute("color", new THREE.BufferAttribute(orbCol, 3));
 
     const orbMat = new THREE.PointsMaterial({
-      size: 0.012,
+      size: 0.0125,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.92,
       vertexColors: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
@@ -178,10 +178,11 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
     }
 
     // Multiple thicker rings (closer to the reference video)
-    addRingBand({ tiltX: Math.PI * 0.52, tiltY: 0, tiltZ: Math.PI * 0.12, color: pal.ring, opacity: 0.85, size: 0.013, band: 3 });
-    addRingBand({ tiltX: Math.PI * 0.18, tiltY: Math.PI * 0.33, tiltZ: -Math.PI * 0.06, color: pal.b, opacity: 0.65, size: 0.012, band: 3 });
-    addRingBand({ tiltX: Math.PI * 0.34, tiltY: -Math.PI * 0.22, tiltZ: Math.PI * 0.28, color: pal.a, opacity: 0.55, size: 0.011, band: 2 });
-    addRingBand({ tiltX: Math.PI * 0.62, tiltY: Math.PI * 0.18, tiltZ: -Math.PI * 0.20, color: pal.b, opacity: 0.45, size: 0.010, band: 2 });
+    // Thicker, more vivid bands (closer to the reference):
+    addRingBand({ tiltX: Math.PI * 0.52, tiltY: 0, tiltZ: Math.PI * 0.12, color: pal.ring, opacity: 0.92, size: 0.017, band: 5 });
+    addRingBand({ tiltX: Math.PI * 0.18, tiltY: Math.PI * 0.33, tiltZ: -Math.PI * 0.06, color: pal.b, opacity: 0.78, size: 0.016, band: 5 });
+    addRingBand({ tiltX: Math.PI * 0.34, tiltY: -Math.PI * 0.22, tiltZ: Math.PI * 0.28, color: pal.a, opacity: 0.62, size: 0.014, band: 4 });
+    addRingBand({ tiltX: Math.PI * 0.62, tiltY: Math.PI * 0.18, tiltZ: -Math.PI * 0.20, color: pal.b, opacity: 0.52, size: 0.013, band: 4 });
 
     // Light touch: a dim ambient so the GPU pipeline stays stable (materials are additive anyway)
     scene.add(new THREE.AmbientLight(0xffffff, 0.1));

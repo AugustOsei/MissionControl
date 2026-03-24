@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { usePathname } from "next/navigation";
 
 type ActivityItem = { id: string; title: string; time: string; color: string };
 type HNStory = { id: number; title: string; url?: string; score: number; by: string; ago: string };
@@ -10,6 +11,11 @@ function timeNow() {
 }
 
 export function ActivityRail() {
+  const pathname = usePathname();
+
+  // Execution-only tasks page: no activity/tech rail.
+  if (pathname.startsWith("/tasks")) return null;
+
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [hn, setHn] = useState<HNStory[]>([]);
   const [lastRefresh, setLastRefresh] = useState<string>("");
