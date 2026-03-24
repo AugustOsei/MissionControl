@@ -31,12 +31,8 @@ export function Topbar() {
           <div className="hidden text-xs font-mono text-white/40 md:block tracking-widest uppercase">
             Control Center
           </div>
-          <div className="flex-1 max-w-sm">
-            <input
-              placeholder="Search (coming soon)…"
-              className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-sm text-white/80 placeholder:text-white/25 outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20 transition-colors font-mono"
-            />
-          </div>
+          {/* Search removed for now (was placeholder). */}
+          <div className="flex-1" />
         </div>
 
         <div className="flex items-center gap-2.5">

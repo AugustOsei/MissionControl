@@ -8,6 +8,7 @@ export type NewsItem = {
   type?: string;
   url?: string;
   submittedAt?: string;
+  createdAt?: string;
   pillar?: string;
   businessValue?: string;
 };
@@ -47,14 +48,23 @@ export async function getNewsFeed(limit = 50): Promise<NewsItem[]> {
 
   return (res.results as Array<any>).map((page) => {
     const props = page.properties ?? {};
+    const submittedAt =
+      dateStart(props["Submitted at"]) ??
+      dateStart(props["Publish date"]) ??
+      undefined;
+
     return {
       id: page.id,
       title: plainTitle(props.Name) || "(untitled)",
       source: selectName(props.Source),
       status: selectName(props.Status),
       type: selectName(props.Type),
-      url: urlValue(props["Canonical URL"]) ?? urlValue(props["Source URL"]) ?? urlValue(props["WordPress URL"]),
-      submittedAt: dateStart(props["Submitted at"]) ?? dateStart(props["Publish date"]) ?? undefined,
+      url:
+        urlValue(props["Canonical URL"]) ??
+        urlValue(props["Source URL"]) ??
+        urlValue(props["WordPress URL"]),
+      submittedAt,
+      createdAt: page.created_time,
       pillar: selectName(props.Pillar),
       businessValue: selectName(props["Business Value"]),
     };

@@ -15,6 +15,10 @@ function inWindow(iso: string | undefined, days: number) {
   return t >= Date.now() - days * 86400 * 1000;
 }
 
+function effectiveDate(x: NewsItem) {
+  return x.submittedAt || x.createdAt;
+}
+
 export function NewsList({ items }: { items: NewsItem[] }) {
   const [q, setQ] = useState("");
   const [windowDays, setWindowDays] = useState<7 | 30 | 3650>(7);
@@ -23,7 +27,7 @@ export function NewsList({ items }: { items: NewsItem[] }) {
     const needle = q.trim().toLowerCase();
     return items
       .filter((x) => {
-        if (windowDays !== 3650 && !inWindow(x.submittedAt, windowDays)) return false;
+        if (windowDays !== 3650 && !inWindow(effectiveDate(x), windowDays)) return false;
         if (needle && !x.title.toLowerCase().includes(needle)) return false;
         return true;
       })
@@ -76,7 +80,7 @@ export function NewsList({ items }: { items: NewsItem[] }) {
           {filtered.map((x) => (
             <div key={x.id} className="grid grid-cols-12 gap-2 px-4 py-3 hover:bg-white/5">
               <div className="col-span-3 md:col-span-2 text-[11px] font-mono text-white/35">
-                {shortDate(x.submittedAt)}
+                {shortDate(effectiveDate(x))}
               </div>
 
               <div className="col-span-9 md:col-span-7 min-w-0">
