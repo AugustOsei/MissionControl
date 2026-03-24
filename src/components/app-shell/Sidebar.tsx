@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { OpenClawLogo } from "@/components/ornaments/OpenClawLogo";
+// Use a static OpenClaw mark image for branding (not the blue SVG logo).
+// Place file at: public/openclaw.jpg
+
 
 const NAV = [
   {
@@ -133,7 +135,7 @@ export function Sidebar() {
       <div className="md:hidden sticky top-0 z-40 border-b border-white/5 bg-black/70 backdrop-blur px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <OpenClawLogo size={26} />
+            <img src="/openclaw.jpg" alt="OpenClaw" className="h-[26px] w-[26px] rounded-md object-cover border border-white/10" />
             <div className="leading-tight">
               <div className="text-sm font-semibold tracking-wide text-white/90">Mission Control</div>
               <div className="text-[11px] text-white/35 font-mono">mc.taskcocoon.com</div>
@@ -173,7 +175,7 @@ export function Sidebar() {
           >
             <div className="flex items-center justify-between gap-3 px-2 py-2">
               <div className="flex items-center gap-2">
-                <OpenClawLogo size={30} />
+                <img src="/openclaw.jpg" alt="OpenClaw" className="h-[30px] w-[30px] rounded-md object-cover border border-white/10" />
                 <div>
                   <div className="text-sm font-semibold tracking-wide text-white/90">Mission Control</div>
                   <div className="text-[11px] text-white/40 font-mono mt-0.5">OpenClaw · Notion</div>
@@ -210,7 +212,7 @@ export function Sidebar() {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-white/5">
-          <OpenClawLogo size={38} />
+          <img src="/openclaw.jpg" alt="OpenClaw" className="h-[38px] w-[38px] rounded-md object-cover border border-white/10" />
           <div>
             <div className="text-sm font-semibold tracking-wide text-white/90">Mission Control</div>
             <div className="text-[11px] text-white/40 font-mono mt-0.5">OpenClaw · Notion</div>

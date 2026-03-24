@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { OpenClawLogo } from "@/components/ornaments/OpenClawLogo";
 // NOTE: HudClock is used in the top bar. Tasks page also has a larger YearCountdown card.
 import { HudClock } from "@/components/ornaments/HudClock";
 
@@ -19,7 +18,7 @@ function Avatar() {
   }
   return (
     <div className="h-8 w-8 rounded-full border border-white/10 bg-black/30 grid place-items-center">
-      <OpenClawLogo size={18} />
+      <span className="text-[11px] font-mono text-white/50">A</span>
     </div>
   );
 }
@@ -29,9 +28,8 @@ export function Topbar() {
     <header className="sticky top-0 z-20 border-b border-white/10 bg-neutral-950/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 md:px-6">
         <div className="flex flex-1 items-center gap-3">
-          <div className="hidden md:flex items-center gap-2">
-            <OpenClawLogo size={22} />
-            <div className="text-xs font-mono text-white/40 tracking-widest uppercase">Control Center</div>
+          <div className="hidden text-xs font-mono text-white/40 md:block tracking-widest uppercase">
+            Control Center
           </div>
           {/* Search removed for now (was placeholder). */}
           <div className="flex-1" />
