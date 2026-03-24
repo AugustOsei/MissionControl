@@ -1,6 +1,6 @@
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { QuickAdd } from "@/components/tasks/QuickAdd";
-import { YearCountdown } from "@/components/ornaments/YearCountdown";
+import { ChronoCountdown } from "@/components/ornaments/ChronoCountdown";
 import { getTasksForBoard } from "@/lib/notion/tasks";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export default async function TasksPage() {
         </div>
       </div>
 
-      <YearCountdown />
+      <ChronoCountdown />
       <QuickAdd />
       <TaskBoard tasks={tasks} />
     </div>
