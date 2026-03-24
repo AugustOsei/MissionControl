@@ -57,6 +57,17 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    href: "/agents",
+    label: "Agents",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <rect x="2" y="2" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.3" opacity="0.7" />
+        <path d="M5 6.2c0-1.2 1.2-2.2 3-2.2s3 1 3 2.2c0 1.2-1.2 2.2-3 2.2s-3-1-3-2.2Z" fill="currentColor" opacity="0.45" />
+        <path d="M4.4 12.2c.6-1.8 2.1-2.7 3.6-2.7s3 .9 3.6 2.7" stroke="currentColor" strokeWidth="1.2" opacity="0.55" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ];
 
 function NavItems({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
