@@ -138,7 +138,14 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
     }
     ringGeoBase.setAttribute("position", new THREE.BufferAttribute(ringPos, 3));
 
-    const rings: Array<{ geo: THREE.BufferGeometry; mat: THREE.PointsMaterial; pts: THREE.Points }> = [];
+    const rings: Array<{
+      geo: THREE.BufferGeometry;
+      mat: THREE.PointsMaterial;
+      pts: THREE.Points;
+      base: { x: number; y: number; z: number };
+      speed: number;
+      phase: number;
+    }> = [];
 
     function addRingBand({
       tiltX,
@@ -147,7 +154,9 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
       color,
       opacity,
       size,
-      band = 3,
+      layers = 2,
+      speed,
+      phase,
     }: {
       tiltX: number;
       tiltY: number;
@@ -155,35 +164,37 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
       color: THREE.Color;
       opacity: number;
       size: number;
-      band?: number;
+      layers?: number;
+      speed: number;
+      phase: number;
     }) {
-      // "band" = multiple close layers to fake thickness.
-      // Keep offsets deterministic so rings stay well-spaced.
-      for (let i = 0; i < band; i++) {
+      // Keep only 4–6 visible rings. Thickness comes from 2 layers per ring (not 10+).
+      for (let i = 0; i < layers; i++) {
         const geo = ringGeoBase.clone();
         const mat = new THREE.PointsMaterial({
-          size: size + i * 0.0012,
+          size: size + i * 0.0018,
           transparent: true,
-          opacity: opacity - i * 0.07,
+          opacity: opacity - i * 0.12,
           color,
           depthWrite: false,
           blending: THREE.AdditiveBlending,
         });
         const pts = new THREE.Points(geo, mat);
-        pts.rotation.x = tiltX + i * 0.010;
-        pts.rotation.y = tiltY + i * 0.008;
-        pts.rotation.z = tiltZ - i * 0.006;
+        const bx = tiltX + i * 0.006;
+        const by = tiltY + i * 0.004;
+        const bz = tiltZ - i * 0.004;
+        pts.rotation.set(bx, by, bz);
         scene.add(pts);
-        rings.push({ geo, mat, pts });
+        rings.push({ geo, mat, pts, base: { x: bx, y: by, z: bz }, speed, phase });
       }
     }
 
-    // Multiple thicker rings (closer to the reference video)
-    // Thicker, more vivid bands (closer to the reference):
-    addRingBand({ tiltX: Math.PI * 0.52, tiltY: 0, tiltZ: Math.PI * 0.12, color: pal.ring, opacity: 0.92, size: 0.017, band: 5 });
-    addRingBand({ tiltX: Math.PI * 0.18, tiltY: Math.PI * 0.33, tiltZ: -Math.PI * 0.06, color: pal.b, opacity: 0.78, size: 0.016, band: 5 });
-    addRingBand({ tiltX: Math.PI * 0.34, tiltY: -Math.PI * 0.22, tiltZ: Math.PI * 0.28, color: pal.a, opacity: 0.62, size: 0.014, band: 4 });
-    addRingBand({ tiltX: Math.PI * 0.62, tiltY: Math.PI * 0.18, tiltZ: -Math.PI * 0.20, color: pal.b, opacity: 0.52, size: 0.013, band: 4 });
+    // 5 rings total (hero), each with 2-layer thickness.
+    addRingBand({ tiltX: Math.PI * 0.52, tiltY: 0, tiltZ: Math.PI * 0.12, color: pal.ring, opacity: 0.95, size: 0.020, layers: 2, speed: 0.9, phase: 0.0 });
+    addRingBand({ tiltX: Math.PI * 0.18, tiltY: Math.PI * 0.33, tiltZ: -Math.PI * 0.06, color: pal.b, opacity: 0.80, size: 0.019, layers: 2, speed: 1.15, phase: 1.3 });
+    addRingBand({ tiltX: Math.PI * 0.34, tiltY: -Math.PI * 0.22, tiltZ: Math.PI * 0.28, color: pal.a, opacity: 0.70, size: 0.017, layers: 2, speed: 1.0, phase: 2.1 });
+    addRingBand({ tiltX: Math.PI * 0.62, tiltY: Math.PI * 0.18, tiltZ: -Math.PI * 0.20, color: pal.b, opacity: 0.60, size: 0.016, layers: 2, speed: 0.8, phase: 2.8 });
+    addRingBand({ tiltX: Math.PI * 0.10, tiltY: -Math.PI * 0.35, tiltZ: Math.PI * 0.02, color: pal.ring, opacity: 0.55, size: 0.015, layers: 2, speed: 1.25, phase: 3.6 });
 
     // Light touch: a dim ambient so the GPU pipeline stays stable (materials are additive anyway)
     scene.add(new THREE.AmbientLight(0xffffff, 0.1));
@@ -221,24 +232,22 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
         orb.rotation.y += 0.0011;
         orb.rotation.x = Math.sin(t * 1.2) * 0.05;
 
-        // ring motion (gyroscope feel)
-        for (let i = 0; i < rings.length; i++) {
-          const r = rings[i].pts;
-          const dir = i % 2 === 0 ? 1 : -1;
-          r.rotation.y += dir * (0.0006 + i * 0.00008);
-          r.rotation.x += dir * (0.00015 + i * 0.00002);
-        }
-
-        // mouse parallax
+        // mouse parallax (target offsets)
         const tx = pointer.x * cfg.parallax;
         const ty = -pointer.y * cfg.parallax;
         orb.rotation.y += tx * 0.002;
         orb.rotation.x += ty * 0.002;
+
+        // ring motion: do NOT accumulate forever; compute from base each frame.
         for (let i = 0; i < rings.length; i++) {
-          const r = rings[i].pts;
-          const dir = i % 2 === 0 ? 1 : -1;
-          r.rotation.z += dir * tx * 0.001;
-          r.rotation.x += dir * ty * 0.0005;
+          const rr = rings[i];
+          const pts = rr.pts;
+          const wob = Math.sin(t * rr.speed + rr.phase);
+          const wob2 = Math.cos(t * (rr.speed * 0.7) + rr.phase);
+
+          pts.rotation.x = rr.base.x + wob * 0.05 + ty * 0.04;
+          pts.rotation.y = rr.base.y + wob2 * 0.08 + tx * 0.06;
+          pts.rotation.z = rr.base.z + wob * 0.03 + tx * 0.05;
         }
       }
 
