@@ -38,30 +38,59 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-white/60">Today at a glance: ops + focus + intel.</p>
-        </div>
-        <div className="hidden md:flex items-center gap-2">
-          <Link
-            href="/tasks"
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-white/70 hover:bg-white/10"
-          >
-            Tasks ↗
-          </Link>
-          <Link
-            href="/ops"
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-white/70 hover:bg-white/10"
-          >
-            Ops ↗
-          </Link>
-          <Link
-            href="/news"
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-white/70 hover:bg-white/10"
-          >
-            News ↗
-          </Link>
+      {/* HUD header */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-4 md:p-5">
+        {/* glow gradient */}
+        <div className="pointer-events-none absolute inset-0 opacity-70" style={{
+          background:
+            "radial-gradient(900px 250px at 10% 10%, rgba(96,165,250,0.18), transparent 55%), radial-gradient(700px 250px at 90% 0%, rgba(168,85,247,0.14), transparent 60%), radial-gradient(600px 280px at 50% 120%, rgba(34,197,94,0.10), transparent 55%)",
+        }} />
+        {/* scanline */}
+        <div className="pointer-events-none absolute inset-0 opacity-40" style={{
+          backgroundImage:
+            "linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)",
+          backgroundSize: "100% 14px",
+        }} />
+        {/* subtle noise */}
+        <div className="pointer-events-none absolute inset-0 opacity-[0.04]" style={{
+          backgroundImage:
+            "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"120\"><filter id=\"n\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.9\" numOctaves=\"2\" stitchTiles=\"stitch\"/></filter><rect width=\"120\" height=\"120\" filter=\"url(%23n)\" opacity=\"0.35\"/></svg>')",
+        }} />
+
+        <div className="relative flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span
+                className={
+                  "h-2 w-2 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.6)] " +
+                  (gw.ok ? "bg-green-400 animate-pulse" : "bg-red-400")
+                }
+                aria-hidden
+              />
+              <h1 className="text-xl font-semibold">Dashboard</h1>
+            </div>
+            <p className="mt-1 text-sm text-white/60">Today at a glance: ops + focus + intel.</p>
+          </div>
+          <div className="hidden md:flex items-center gap-2">
+            <Link
+              href="/tasks"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-white/70 hover:bg-white/10"
+            >
+              Tasks ↗
+            </Link>
+            <Link
+              href="/ops"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-white/70 hover:bg-white/10"
+            >
+              Ops ↗
+            </Link>
+            <Link
+              href="/news"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-white/70 hover:bg-white/10"
+            >
+              News ↗
+            </Link>
+          </div>
         </div>
       </div>
 
