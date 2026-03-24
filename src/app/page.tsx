@@ -67,10 +67,10 @@ export default async function DashboardPage() {
 
         <div className="relative flex flex-col justify-between gap-4">
           <div>
-            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Welcome, Augustine</div>
+            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Welcome back, Augustine.</div>
             <h1 className="mt-1 text-2xl font-semibold text-white/90 leading-tight">Mission Control</h1>
             <p className="mt-2 text-sm text-white/60">
-              Ops + focus + intel — one cockpit.
+              Status: {mood === "error" ? "ALERT" : mood === "warn" ? "ATTENTION" : "NOMINAL"} · Ops + focus + intel — one cockpit.
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
