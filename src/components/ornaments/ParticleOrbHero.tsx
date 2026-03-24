@@ -143,58 +143,71 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
       mat: THREE.PointsMaterial;
       pts: THREE.Points;
       base: { x: number; y: number; z: number };
-      speed: number;
+      spin: number;
       phase: number;
     }> = [];
 
-    function addRingBand({
+    function makeSaturnRingGeometry({ radius, thickness, count }: { radius: number; thickness: number; count: number }) {
+      const geo = new THREE.BufferGeometry();
+      const pos = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const rr = radius + (Math.random() - 0.5) * thickness;
+        const y = (Math.random() - 0.5) * 0.015;
+        pos[i * 3 + 0] = Math.cos(a) * rr;
+        pos[i * 3 + 1] = y;
+        pos[i * 3 + 2] = Math.sin(a) * rr;
+      }
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      return geo;
+    }
+
+    function addSaturnRing({
       tiltX,
       tiltY,
       tiltZ,
+      radius,
+      thickness,
+      count,
       color,
       opacity,
       size,
-      layers = 2,
-      speed,
+      spin,
       phase,
     }: {
       tiltX: number;
       tiltY: number;
       tiltZ: number;
+      radius: number;
+      thickness: number;
+      count: number;
       color: THREE.Color;
       opacity: number;
       size: number;
-      layers?: number;
-      speed: number;
+      spin: number;
       phase: number;
     }) {
-      // Keep only 4–6 visible rings. Thickness comes from 2 layers per ring (not 10+).
-      for (let i = 0; i < layers; i++) {
-        const geo = ringGeoBase.clone();
-        const mat = new THREE.PointsMaterial({
-          size: size + i * 0.0018,
-          transparent: true,
-          opacity: opacity - i * 0.12,
-          color,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-        });
-        const pts = new THREE.Points(geo, mat);
-        const bx = tiltX + i * 0.006;
-        const by = tiltY + i * 0.004;
-        const bz = tiltZ - i * 0.004;
-        pts.rotation.set(bx, by, bz);
-        scene.add(pts);
-        rings.push({ geo, mat, pts, base: { x: bx, y: by, z: bz }, speed, phase });
-      }
+      const geo = makeSaturnRingGeometry({ radius, thickness, count });
+      const mat = new THREE.PointsMaterial({
+        size,
+        transparent: true,
+        opacity,
+        color,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      });
+      const pts = new THREE.Points(geo, mat);
+      const base = { x: tiltX, y: tiltY, z: tiltZ };
+      pts.rotation.set(base.x, base.y, base.z);
+      scene.add(pts);
+      rings.push({ geo, mat, pts, base, spin, phase });
     }
 
-    // 5 rings total (hero), each with 2-layer thickness.
-    addRingBand({ tiltX: Math.PI * 0.52, tiltY: 0, tiltZ: Math.PI * 0.12, color: pal.ring, opacity: 0.95, size: 0.020, layers: 2, speed: 0.9, phase: 0.0 });
-    addRingBand({ tiltX: Math.PI * 0.18, tiltY: Math.PI * 0.33, tiltZ: -Math.PI * 0.06, color: pal.b, opacity: 0.80, size: 0.019, layers: 2, speed: 1.15, phase: 1.3 });
-    addRingBand({ tiltX: Math.PI * 0.34, tiltY: -Math.PI * 0.22, tiltZ: Math.PI * 0.28, color: pal.a, opacity: 0.70, size: 0.017, layers: 2, speed: 1.0, phase: 2.1 });
-    addRingBand({ tiltX: Math.PI * 0.62, tiltY: Math.PI * 0.18, tiltZ: -Math.PI * 0.20, color: pal.b, opacity: 0.60, size: 0.016, layers: 2, speed: 0.8, phase: 2.8 });
-    addRingBand({ tiltX: Math.PI * 0.10, tiltY: -Math.PI * 0.35, tiltZ: Math.PI * 0.02, color: pal.ring, opacity: 0.55, size: 0.015, layers: 2, speed: 1.25, phase: 3.6 });
+    // Exactly 4 rings (max), thick like Saturn bands.
+    addSaturnRing({ tiltX: Math.PI * 0.52, tiltY: 0, tiltZ: Math.PI * 0.12, radius: 1.56, thickness: 0.14, count: 5200, color: pal.ring, opacity: 0.88, size: 0.010, spin: 0.20, phase: 0.0 });
+    addSaturnRing({ tiltX: Math.PI * 0.18, tiltY: Math.PI * 0.33, tiltZ: -Math.PI * 0.06, radius: 1.64, thickness: 0.12, count: 4600, color: pal.b, opacity: 0.72, size: 0.010, spin: -0.24, phase: 1.3 });
+    addSaturnRing({ tiltX: Math.PI * 0.34, tiltY: -Math.PI * 0.22, tiltZ: Math.PI * 0.28, radius: 1.70, thickness: 0.10, count: 3800, color: pal.a, opacity: 0.62, size: 0.010, spin: 0.18, phase: 2.1 });
+    addSaturnRing({ tiltX: Math.PI * 0.62, tiltY: Math.PI * 0.18, tiltZ: -Math.PI * 0.20, radius: 1.78, thickness: 0.09, count: 3200, color: pal.b, opacity: 0.52, size: 0.010, spin: -0.16, phase: 2.8 });
 
     // Light touch: a dim ambient so the GPU pipeline stays stable (materials are additive anyway)
     scene.add(new THREE.AmbientLight(0xffffff, 0.1));
@@ -238,16 +251,16 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
         orb.rotation.y += tx * 0.002;
         orb.rotation.x += ty * 0.002;
 
-        // ring motion: do NOT accumulate forever; compute from base each frame.
+        // ring motion: stable (no accumulation), with spin + controlled wobble.
         for (let i = 0; i < rings.length; i++) {
           const rr = rings[i];
           const pts = rr.pts;
-          const wob = Math.sin(t * rr.speed + rr.phase);
-          const wob2 = Math.cos(t * (rr.speed * 0.7) + rr.phase);
+          const wob = Math.sin(t * 1.2 + rr.phase);
+          const wob2 = Math.cos(t * 0.9 + rr.phase);
 
-          pts.rotation.x = rr.base.x + wob * 0.05 + ty * 0.04;
-          pts.rotation.y = rr.base.y + wob2 * 0.08 + tx * 0.06;
-          pts.rotation.z = rr.base.z + wob * 0.03 + tx * 0.05;
+          pts.rotation.x = rr.base.x + wob * 0.045 + ty * 0.04;
+          pts.rotation.y = rr.base.y + t * rr.spin + wob2 * 0.06 + tx * 0.06;
+          pts.rotation.z = rr.base.z + wob * 0.025 + tx * 0.05;
         }
       }
 
