@@ -131,10 +131,10 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
     const ringPos = new Float32Array(cfg.ringCount * 3);
     for (let i = 0; i < cfg.ringCount; i++) {
       const tt = (i / cfg.ringCount) * Math.PI * 2;
-      const wobble = (Math.random() - 0.5) * 0.035;
-      ringPos[i * 3 + 0] = Math.cos(tt) * (cfg.ringRadius + wobble);
-      ringPos[i * 3 + 1] = (Math.sin(tt * 2) * 0.07) + wobble * 0.25;
-      ringPos[i * 3 + 2] = Math.sin(tt) * (cfg.ringRadius + wobble);
+      // Keep ring geometry clean + evenly spaced (closer to the reference video).
+      ringPos[i * 3 + 0] = Math.cos(tt) * cfg.ringRadius;
+      ringPos[i * 3 + 1] = Math.sin(tt) * 0.02;
+      ringPos[i * 3 + 2] = Math.sin(tt) * cfg.ringRadius;
     }
     ringGeoBase.setAttribute("position", new THREE.BufferAttribute(ringPos, 3));
 
@@ -158,20 +158,21 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
       band?: number;
     }) {
       // "band" = multiple close layers to fake thickness.
+      // Keep offsets deterministic so rings stay well-spaced.
       for (let i = 0; i < band; i++) {
         const geo = ringGeoBase.clone();
         const mat = new THREE.PointsMaterial({
-          size: size + i * 0.0015,
+          size: size + i * 0.0012,
           transparent: true,
-          opacity: opacity - i * 0.08,
+          opacity: opacity - i * 0.07,
           color,
           depthWrite: false,
           blending: THREE.AdditiveBlending,
         });
         const pts = new THREE.Points(geo, mat);
-        pts.rotation.x = tiltX + i * 0.012;
-        pts.rotation.y = tiltY + i * 0.010;
-        pts.rotation.z = tiltZ - i * 0.008;
+        pts.rotation.x = tiltX + i * 0.010;
+        pts.rotation.y = tiltY + i * 0.008;
+        pts.rotation.z = tiltZ - i * 0.006;
         scene.add(pts);
         rings.push({ geo, mat, pts });
       }
