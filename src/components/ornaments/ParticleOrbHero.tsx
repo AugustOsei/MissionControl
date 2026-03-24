@@ -10,27 +10,28 @@ function prefersReducedMotion() {
 }
 
 function palette(mood: OrbMood) {
+  // Pushed saturation/contrast for a more "hero" look.
   if (mood === "error") {
     return {
-      a: new THREE.Color("#ef4444"),
-      b: new THREE.Color("#f97316"),
-      ring: new THREE.Color("#fb7185"),
-      glow: "rgba(239,68,68,0.20)",
+      a: new THREE.Color("#ff2d55"),
+      b: new THREE.Color("#ff6a00"),
+      ring: new THREE.Color("#ff4d6d"),
+      glow: "rgba(255,45,85,0.26)",
     };
   }
   if (mood === "warn") {
     return {
-      a: new THREE.Color("#f59e0b"),
-      b: new THREE.Color("#60a5fa"),
-      ring: new THREE.Color("#fbbf24"),
-      glow: "rgba(245,158,11,0.18)",
+      a: new THREE.Color("#ffb703"),
+      b: new THREE.Color("#3b82f6"),
+      ring: new THREE.Color("#ffd166"),
+      glow: "rgba(255,183,3,0.22)",
     };
   }
   return {
-    a: new THREE.Color("#60a5fa"),
-    b: new THREE.Color("#a78bfa"),
+    a: new THREE.Color("#2dd4ff"),
+    b: new THREE.Color("#a855f7"),
     ring: new THREE.Color("#22c55e"),
-    glow: "rgba(96,165,250,0.20)",
+    glow: "rgba(45,212,255,0.24)",
   };
 }
 
@@ -40,9 +41,9 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
 
   const cfg = useMemo(
     () => ({
-      count: 24000,
+      count: 26000,
       radius: 1.15,
-      ringCount: 2400,
+      ringCount: 2800,
       ringRadius: 1.62,
       pixelRatioCap: 1.6,
       parallax: 0.28,
@@ -125,46 +126,62 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
     scene.add(orb);
 
     // Orbit ring
-    const ringGeo = new THREE.BufferGeometry();
+    // Build a base ring geometry once, then reuse across multiple "banded" rings.
+    const ringGeoBase = new THREE.BufferGeometry();
     const ringPos = new Float32Array(cfg.ringCount * 3);
     for (let i = 0; i < cfg.ringCount; i++) {
-      const t = (i / cfg.ringCount) * Math.PI * 2;
-      const wobble = (Math.random() - 0.5) * 0.03;
-      ringPos[i * 3 + 0] = Math.cos(t) * (cfg.ringRadius + wobble);
-      ringPos[i * 3 + 1] = (Math.sin(t * 2) * 0.06) + wobble * 0.2;
-      ringPos[i * 3 + 2] = Math.sin(t) * (cfg.ringRadius + wobble);
+      const tt = (i / cfg.ringCount) * Math.PI * 2;
+      const wobble = (Math.random() - 0.5) * 0.035;
+      ringPos[i * 3 + 0] = Math.cos(tt) * (cfg.ringRadius + wobble);
+      ringPos[i * 3 + 1] = (Math.sin(tt * 2) * 0.07) + wobble * 0.25;
+      ringPos[i * 3 + 2] = Math.sin(tt) * (cfg.ringRadius + wobble);
     }
-    ringGeo.setAttribute("position", new THREE.BufferAttribute(ringPos, 3));
+    ringGeoBase.setAttribute("position", new THREE.BufferAttribute(ringPos, 3));
 
-    const ringMat = new THREE.PointsMaterial({
-      size: 0.010,
-      transparent: true,
-      opacity: 0.7,
-      color: pal.ring,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
+    const rings: Array<{ geo: THREE.BufferGeometry; mat: THREE.PointsMaterial; pts: THREE.Points }> = [];
 
-    const ring = new THREE.Points(ringGeo, ringMat);
-    ring.rotation.x = Math.PI * 0.52;
-    ring.rotation.z = Math.PI * 0.12;
-    scene.add(ring);
+    function addRingBand({
+      tiltX,
+      tiltY,
+      tiltZ,
+      color,
+      opacity,
+      size,
+      band = 3,
+    }: {
+      tiltX: number;
+      tiltY: number;
+      tiltZ: number;
+      color: THREE.Color;
+      opacity: number;
+      size: number;
+      band?: number;
+    }) {
+      // "band" = multiple close layers to fake thickness.
+      for (let i = 0; i < band; i++) {
+        const geo = ringGeoBase.clone();
+        const mat = new THREE.PointsMaterial({
+          size: size + i * 0.0015,
+          transparent: true,
+          opacity: opacity - i * 0.08,
+          color,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const pts = new THREE.Points(geo, mat);
+        pts.rotation.x = tiltX + i * 0.012;
+        pts.rotation.y = tiltY + i * 0.010;
+        pts.rotation.z = tiltZ - i * 0.008;
+        scene.add(pts);
+        rings.push({ geo, mat, pts });
+      }
+    }
 
-    // Second orbit ring (adds that "hero" motion)
-    const ring2Geo = ringGeo.clone();
-    const ring2Mat = new THREE.PointsMaterial({
-      size: 0.009,
-      transparent: true,
-      opacity: 0.55,
-      color: pal.b,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    });
-    const ring2 = new THREE.Points(ring2Geo, ring2Mat);
-    ring2.rotation.x = Math.PI * 0.18;
-    ring2.rotation.y = Math.PI * 0.33;
-    ring2.rotation.z = -Math.PI * 0.06;
-    scene.add(ring2);
+    // Multiple thicker rings (closer to the reference video)
+    addRingBand({ tiltX: Math.PI * 0.52, tiltY: 0, tiltZ: Math.PI * 0.12, color: pal.ring, opacity: 0.85, size: 0.013, band: 3 });
+    addRingBand({ tiltX: Math.PI * 0.18, tiltY: Math.PI * 0.33, tiltZ: -Math.PI * 0.06, color: pal.b, opacity: 0.65, size: 0.012, band: 3 });
+    addRingBand({ tiltX: Math.PI * 0.34, tiltY: -Math.PI * 0.22, tiltZ: Math.PI * 0.28, color: pal.a, opacity: 0.55, size: 0.011, band: 2 });
+    addRingBand({ tiltX: Math.PI * 0.62, tiltY: Math.PI * 0.18, tiltZ: -Math.PI * 0.20, color: pal.b, opacity: 0.45, size: 0.010, band: 2 });
 
     // Light touch: a dim ambient so the GPU pipeline stays stable (materials are additive anyway)
     scene.add(new THREE.AmbientLight(0xffffff, 0.1));
@@ -202,17 +219,25 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
         orb.rotation.y += 0.0011;
         orb.rotation.x = Math.sin(t * 1.2) * 0.05;
 
-        ring.rotation.y -= 0.0015;
-        ring2.rotation.y += 0.0012;
-        ring2.rotation.x += 0.0004;
+        // ring motion (gyroscope feel)
+        for (let i = 0; i < rings.length; i++) {
+          const r = rings[i].pts;
+          const dir = i % 2 === 0 ? 1 : -1;
+          r.rotation.y += dir * (0.0006 + i * 0.00008);
+          r.rotation.x += dir * (0.00015 + i * 0.00002);
+        }
 
         // mouse parallax
         const tx = pointer.x * cfg.parallax;
         const ty = -pointer.y * cfg.parallax;
         orb.rotation.y += tx * 0.002;
         orb.rotation.x += ty * 0.002;
-        ring.rotation.z += tx * 0.001;
-        ring2.rotation.z -= tx * 0.001;
+        for (let i = 0; i < rings.length; i++) {
+          const r = rings[i].pts;
+          const dir = i % 2 === 0 ? 1 : -1;
+          r.rotation.z += dir * tx * 0.001;
+          r.rotation.x += dir * ty * 0.0005;
+        }
       }
 
       renderer.render(scene, camera);
@@ -230,10 +255,11 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
       wrap.removeEventListener("pointerleave", onLeave);
       orbGeo.dispose();
       orbMat.dispose();
-      ringGeo.dispose();
-      ringMat.dispose();
-      ring2Geo.dispose();
-      ring2Mat.dispose();
+      ringGeoBase.dispose();
+      for (const r of rings) {
+        r.geo.dispose();
+        r.mat.dispose();
+      }
       renderer.dispose();
       (renderer as any).forceContextLoss?.();
     };
