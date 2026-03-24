@@ -8,6 +8,18 @@ import { OpenClawLogo } from "@/components/ornaments/OpenClawLogo";
 
 const NAV = [
   {
+    href: "/",
+    label: "Dashboard",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <rect x="1" y="1" width="6.5" height="6.5" rx="1.5" fill="currentColor" opacity="0.55" />
+        <rect x="8.5" y="1" width="6.5" height="4.5" rx="1.5" fill="currentColor" opacity="0.45" />
+        <rect x="8.5" y="6.5" width="6.5" height="9" rx="1.5" fill="currentColor" opacity="0.35" />
+        <rect x="1" y="8.5" width="6.5" height="7" rx="1.5" fill="currentColor" opacity="0.4" />
+      </svg>
+    ),
+  },
+  {
     href: "/tasks",
     label: "Tasks",
     icon: (
@@ -74,7 +86,7 @@ function NavItems({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
   return (
     <>
       {NAV.map((item) => {
-        const active = pathname.startsWith(item.href);
+        const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}
