@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ParticleOrbHero } from "@/components/ornaments/ParticleOrbHero";
 import { getNewsFeed } from "@/lib/notion/news";
 import { getOpsEvents } from "@/lib/notion/opsEvents";
 import { getCronMonitorRows, summarizeCronRows } from "@/lib/notion/crons";
@@ -29,6 +30,8 @@ export default async function DashboardPage() {
   const cronSummary = summarizeCronRows(cronRows);
   const cronErrors = cronRows.filter((r) => (r.lastStatus ?? "").toLowerCase() === "error");
 
+  const mood = !gw.ok ? "error" : cronErrors.length > 0 ? "warn" : "ok";
+
   const doing = tasks.filter((t) => (t.status ?? "").toLowerCase() === "doing").slice(0, 6);
   const p0p1 = tasks
     .filter((t) => ["p0", "p1"].includes((t.priority ?? "").toLowerCase()))
@@ -38,8 +41,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* HUD header */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-4 md:p-5">
+      {/* HERO */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <ParticleOrbHero mood={mood} />
+        </div>
+
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-4 md:p-5">
         {/* glow gradient */}
         <div className="pointer-events-none absolute inset-0 opacity-70" style={{
           background:
@@ -57,21 +65,37 @@ export default async function DashboardPage() {
             "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"120\" height=\"120\"><filter id=\"n\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.9\" numOctaves=\"2\" stitchTiles=\"stitch\"/></filter><rect width=\"120\" height=\"120\" filter=\"url(%23n)\" opacity=\"0.35\"/></svg>')",
         }} />
 
-        <div className="relative flex items-start justify-between gap-4">
+        <div className="relative flex flex-col justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Welcome, Augustine</div>
+            <h1 className="mt-1 text-2xl font-semibold text-white/90 leading-tight">Mission Control</h1>
+            <p className="mt-2 text-sm text-white/60">
+              Ops + focus + intel — one cockpit.
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
               <span
                 className={
-                  "h-2 w-2 rounded-full shadow-[0_0_10px_rgba(96,165,250,0.6)] " +
-                  (gw.ok ? "bg-green-400 animate-pulse" : "bg-red-400")
+                  "rounded-full border px-2 py-1 text-[11px] font-mono " +
+                  (mood === "error"
+                    ? "border-red-500/30 bg-red-500/10 text-red-200"
+                    : mood === "warn"
+                      ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
+                      : "border-green-500/30 bg-green-500/10 text-green-200")
                 }
-                aria-hidden
-              />
-              <h1 className="text-xl font-semibold">Dashboard</h1>
+              >
+                {mood === "error" ? "ALERT" : mood === "warn" ? "ATTENTION" : "NOMINAL"}
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-mono text-white/60">
+                gateway: {gw.ok ? "online" : "offline"}
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-mono text-white/60">
+                cron errors: {cronErrors.length}
+              </span>
             </div>
-            <p className="mt-1 text-sm text-white/60">Today at a glance: ops + focus + intel.</p>
           </div>
-          <div className="hidden md:flex items-center gap-2">
+
+          <div className="flex flex-wrap gap-2">
             <Link
               href="/tasks"
               className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-white/70 hover:bg-white/10"
@@ -90,9 +114,16 @@ export default async function DashboardPage() {
             >
               News ↗
             </Link>
+            <Link
+              href="/projects"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-white/70 hover:bg-white/10"
+            >
+              Projects ↗
+            </Link>
           </div>
         </div>
       </div>
+    </div>
 
       {/* Executive strip */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
