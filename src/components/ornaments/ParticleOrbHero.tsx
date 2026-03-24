@@ -40,11 +40,12 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
 
   const cfg = useMemo(
     () => ({
-      count: 12000,
+      count: 24000,
       radius: 1.15,
-      ringCount: 1800,
-      ringRadius: 1.55,
+      ringCount: 2400,
+      ringRadius: 1.62,
       pixelRatioCap: 1.6,
+      parallax: 0.28,
     }),
     [],
   );
@@ -149,11 +150,42 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
     ring.rotation.z = Math.PI * 0.12;
     scene.add(ring);
 
+    // Second orbit ring (adds that "hero" motion)
+    const ring2Geo = ringGeo.clone();
+    const ring2Mat = new THREE.PointsMaterial({
+      size: 0.009,
+      transparent: true,
+      opacity: 0.55,
+      color: pal.b,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const ring2 = new THREE.Points(ring2Geo, ring2Mat);
+    ring2.rotation.x = Math.PI * 0.18;
+    ring2.rotation.y = Math.PI * 0.33;
+    ring2.rotation.z = -Math.PI * 0.06;
+    scene.add(ring2);
+
     // Light touch: a dim ambient so the GPU pipeline stays stable (materials are additive anyway)
     scene.add(new THREE.AmbientLight(0xffffff, 0.1));
 
     let raf = 0;
     let t = 0;
+
+    const pointer = { x: 0, y: 0 };
+    function onMove(e: PointerEvent) {
+      const rect = wrap!.getBoundingClientRect();
+      const nx = (e.clientX - rect.left) / rect.width;
+      const ny = (e.clientY - rect.top) / rect.height;
+      pointer.x = (nx - 0.5) * 2;
+      pointer.y = (ny - 0.5) * 2;
+    }
+    function onLeave() {
+      pointer.x = 0;
+      pointer.y = 0;
+    }
+    wrap.addEventListener("pointermove", onMove);
+    wrap.addEventListener("pointerleave", onLeave);
 
     function animate() {
       raf = requestAnimationFrame(animate);
@@ -161,9 +193,26 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
 
       if (!reduced) {
         t += 0.0015;
-        orb.rotation.y += 0.0012;
-        orb.rotation.x = Math.sin(t * 1.2) * 0.06;
-        ring.rotation.y -= 0.0016;
+
+        // "breath"
+        const s = 1 + Math.sin(t * 1.5) * 0.012;
+        orb.scale.setScalar(s);
+
+        // base drift
+        orb.rotation.y += 0.0011;
+        orb.rotation.x = Math.sin(t * 1.2) * 0.05;
+
+        ring.rotation.y -= 0.0015;
+        ring2.rotation.y += 0.0012;
+        ring2.rotation.x += 0.0004;
+
+        // mouse parallax
+        const tx = pointer.x * cfg.parallax;
+        const ty = -pointer.y * cfg.parallax;
+        orb.rotation.y += tx * 0.002;
+        orb.rotation.x += ty * 0.002;
+        ring.rotation.z += tx * 0.001;
+        ring2.rotation.z -= tx * 0.001;
       }
 
       renderer.render(scene, camera);
@@ -177,10 +226,14 @@ export function ParticleOrbHero({ mood = "ok" }: { mood?: OrbMood }) {
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      wrap.removeEventListener("pointermove", onMove);
+      wrap.removeEventListener("pointerleave", onLeave);
       orbGeo.dispose();
       orbMat.dispose();
       ringGeo.dispose();
       ringMat.dispose();
+      ring2Geo.dispose();
+      ring2Mat.dispose();
       renderer.dispose();
       (renderer as any).forceContextLoss?.();
     };
