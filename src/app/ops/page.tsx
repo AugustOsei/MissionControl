@@ -1,5 +1,6 @@
 import { getCronMonitorRows, summarizeCronRows } from "@/lib/notion/crons";
 import { getOpsEvents } from "@/lib/notion/opsEvents";
+import { getSystemSummary } from "@/lib/system/summary";
 import { getOpenClawOpsSnapshot } from "@/lib/openclaw/ops";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ function shortDate(iso?: string) {
 
 export default async function OpsPage() {
   const ops = await getOpenClawOpsSnapshot();
+  const sys = await getSystemSummary();
 
   const cronRows = await getCronMonitorRows().catch(() => []);
   const cronSummary = summarizeCronRows(cronRows);
@@ -42,8 +44,8 @@ export default async function OpsPage() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <div className="card">
           <div className="cardTitle">Gateway</div>
-          <div className="cardValue">{ops.gatewayStatus}</div>
-          <div className="cardSub">{ops.gatewayUrl ?? "(not configured)"}</div>
+          <div className="cardValue">{sys.gateway.ok ? "Online" : ops.gatewayStatus}</div>
+          <div className="cardSub">{sys.gateway.url ?? ops.gatewayUrl ?? "(not configured)"}</div>
         </div>
         <div className="card">
           <div className="cardTitle">Cron jobs</div>
@@ -58,9 +60,46 @@ export default async function OpsPage() {
           <div className="cardSub">missed: {missedRows.length}</div>
         </div>
         <div className="card">
-          <div className="cardTitle">Cost (week)</div>
-          <div className="cardValue">{ops.costWeek}</div>
-          <div className="cardSub">placeholder</div>
+          <div className="cardTitle">System</div>
+          <div className="cardValue">{sys.skills.count} skills</div>
+          <div className="cardSub">Notion: {sys.notion.ok ? "connected" : "missing key"}</div>
+        </div>
+      </div>
+
+      {/* Executive system strip */}
+      <div className="rounded-xl border border-white/10 bg-white/5">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+          <div>
+            <div className="text-sm font-semibold">System</div>
+            <div className="text-xs text-white/50">High-level health + inventory</div>
+          </div>
+          <div className="text-xs text-white/50">
+            {sys.vercelCommit ? `deploy: ${sys.vercelCommit.slice(0, 7)}` : "deploy: —"}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 px-4 py-4 md:grid-cols-3">
+          <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Gateway</div>
+            <div className="mt-1 text-sm font-semibold text-white/85">{sys.gateway.ok ? "Online" : "Offline"}</div>
+            <div className="mt-1 text-[11px] font-mono text-white/35 truncate">{sys.gateway.url ?? "—"}</div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Notion</div>
+            <div className="mt-1 text-sm font-semibold text-white/85">{sys.notion.ok ? "Connected" : "Missing key"}</div>
+            <div className="mt-1 text-[11px] font-mono text-white/35">
+              tasks:{sys.notion.configured.tasks ? "✓" : "—"} · projects:{sys.notion.configured.projects ? "✓" : "—"} · content:{sys.notion.configured.content ? "✓" : "—"} · cron:{sys.notion.configured.cron ? "✓" : "—"}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/30 p-3">
+            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Skills inventory</div>
+            <div className="mt-1 text-sm font-semibold text-white/85">{sys.skills.count} tracked</div>
+            <div className="mt-1 text-[11px] font-mono text-white/35 line-clamp-2">
+              {sys.skills.sample.length ? sys.skills.sample.join(" · ") : "—"}
+            </div>
+          </div>
         </div>
       </div>
 
