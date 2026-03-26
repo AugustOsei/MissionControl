@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   const [gw, cronRows, opsEvents, tasks, news] = await Promise.all([
     getGatewayHealth().catch(() => ({ ok: false, status: "offline", url: undefined })),
     getCronMonitorRows().catch(() => []),
-    getOpsEvents(20).catch(() => []),
+    getOpsEvents(60).catch(() => []),
     getTasksForBoard().catch(() => []),
     getNewsFeed(30).catch(() => []),
   ]);
@@ -38,6 +38,16 @@ export default async function DashboardPage() {
     .slice(0, 6);
 
   const topNews = news.slice(0, 8);
+
+  // Dashboard "Ops highlights" should be curated (avoid duplicating the raw Ops Events feed).
+  const opsHighlights = opsEvents
+    .filter((e) => {
+      const lvl = (e.level ?? "").toLowerCase();
+      const name = (e.name ?? "").toLowerCase();
+      // Errors + warnings always. Also show explicit recoveries.
+      return lvl === "error" || lvl === "warn" || name.includes("recovered");
+    })
+    .slice(0, 8);
 
   return (
     <div className="space-y-6">
@@ -163,7 +173,7 @@ export default async function DashboardPage() {
               </Link>
             </div>
             <div className="divide-y divide-white/10">
-              {opsEvents.slice(0, 8).map((e) => {
+              {opsHighlights.map((e) => {
                 const lvl = (e.level ?? "").toLowerCase();
                 const tone =
                   lvl === "error"
@@ -190,8 +200,10 @@ export default async function DashboardPage() {
                 );
               })}
 
-              {opsEvents.length === 0 && (
-                <div className="px-4 py-8 text-center text-sm text-white/35 font-mono">No ops events yet.</div>
+              {opsHighlights.length === 0 && (
+                <div className="px-4 py-8 text-center text-sm text-white/35 font-mono">
+                  No highlights (no recent warn/error/recovery).
+                </div>
               )}
             </div>
           </div>
