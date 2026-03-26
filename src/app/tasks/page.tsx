@@ -18,7 +18,17 @@ export default async function TasksPage() {
       </div>
 
       <ChronoCountdown />
-      <QuickAdd />
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <QuickAdd />
+        </div>
+        <a
+          href="/ideas"
+          className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-mono text-white/60 hover:border-white/20 hover:text-white/80"
+        >
+          Ideas ↗
+        </a>
+      </div>
       <TasksWorkspace tasks={tasks} />
     </div>
   );

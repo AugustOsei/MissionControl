@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 
 const STATUSES = ["Backlog", "Todo", "Doing"]; // work statuses
 
-export function QuickAdd() {
+export function QuickAdd({ defaultMode }: { defaultMode?: "Task" | "Idea" } = {}) {
   const router = useRouter();
   const [title, setTitle] = useState("");
-  const [mode, setMode] = useState<"Task" | "Idea">("Task");
+  const [mode, setMode] = useState<"Task" | "Idea">(defaultMode ?? "Task");
   const [status, setStatus] = useState("Todo");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

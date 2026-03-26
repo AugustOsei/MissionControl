@@ -72,6 +72,17 @@ const NAV = [
     ),
   },
   {
+    href: "/ideas",
+    label: "Ideas",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <rect x="2" y="2" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.3" opacity="0.7" />
+        <path d="M5 10.5c1.2-1.5 2.2-2.6 2.2-3.7 0-1 .8-1.8 1.8-1.8s1.8.8 1.8 1.8c0 1.5-1.2 2.6-2.4 3.9-.6.7-1.2 1.3-1.6 2" stroke="currentColor" strokeWidth="1.2" opacity="0.55" strokeLinecap="round" />
+        <circle cx="8" cy="12.5" r="0.8" fill="currentColor" opacity="0.55" />
+      </svg>
+    ),
+  },
+  {
     href: "/agents",
     label: "Agents",
     icon: (
