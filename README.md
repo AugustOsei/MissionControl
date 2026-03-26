@@ -8,6 +8,7 @@ A nerdy ops/work cockpit.
 
 ## Read first
 
+- License: `./LICENSE` (MIT)
 - Architecture: `./ARCHITECTURE.md`
 - Change log / handoff notes: `./CHANGELOG.md`
 
