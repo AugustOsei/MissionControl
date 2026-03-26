@@ -3,6 +3,12 @@ import { notionQueryDatabase } from "@/lib/notion/client";
 export type ProjectNode = {
   id: string;
   name: string;
+  status?: string;
+  priorityBand?: string;
+  start?: string;
+  due?: string;
+  progressMode?: string;
+  nextAction?: string;
   pillar?: string;
   level?: string;
   parentId?: string;
@@ -37,6 +43,10 @@ function relationFirstId(prop: any): string | undefined {
   return (prop?.relation ?? [])[0]?.id;
 }
 
+function dateStart(prop: any): string | undefined {
+  return prop?.date?.start;
+}
+
 export async function getProjectsTreeForDb(
   databaseId: string
 ): Promise<{ parents: ProjectNode[] }> {
@@ -50,6 +60,12 @@ export async function getProjectsTreeForDb(
     return {
       id: page.id,
       name: plainTitle(props.Name) || "(untitled)",
+      status: selectName(props.Status),
+      priorityBand: selectName(props["Priority band"]),
+      start: dateStart(props.Start),
+      due: dateStart(props.Due),
+      progressMode: selectName(props["Progress Mode"]),
+      nextAction: richTextPlain(props["Next Action"]),
       pillar: selectName(props.Pillar),
       level: selectName(props.Level),
       parentId: relationFirstId(props["Parent Project"]),

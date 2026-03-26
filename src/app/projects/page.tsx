@@ -1,6 +1,7 @@
 import { ProjectExplorer } from "@/components/projects/ProjectExplorer";
 import { getProjectsTreeForDb } from "@/lib/notion/projects";
 import { PROJECT_DATABASES } from "@/lib/notion/databases";
+import { getTasksForBoard } from "@/lib/notion/tasks";
 
 export const dynamic = "force-dynamic";
 
@@ -15,12 +16,33 @@ async function fetchDb(envKey: string) {
 }
 
 export default async function ProjectsPage() {
-  const results = await Promise.all(
-    PROJECT_DATABASES.map(async (db) => ({
-      ...db,
-      tree: await fetchDb(db.envKey),
-    })),
-  );
+  const [results, tasks] = await Promise.all([
+    Promise.all(
+      PROJECT_DATABASES.map(async (db) => ({
+        ...db,
+        tree: await fetchDb(db.envKey),
+      })),
+    ),
+    getTasksForBoard().catch(() => []),
+  ]);
+
+  // Stats are computed from tasks (auto-progress). We ignore ideas.
+  const statsById: Record<string, { notStarted: number; doing: number; done: number; archived: number; pct: number }> = {};
+  for (const t of tasks) {
+    if ((t.bucket ?? "").toLowerCase() === "idea") continue;
+    if (!t.projectId) continue;
+    const s = (t.status ?? "").toLowerCase();
+    const row = (statsById[t.projectId] ??= { notStarted: 0, doing: 0, done: 0, archived: 0, pct: 0 });
+    if (s === "done") row.done++;
+    else if (s === "doing") row.doing++;
+    else if (s === "archived") row.archived++;
+    else row.notStarted++;
+  }
+  for (const [id, r] of Object.entries(statsById)) {
+    const denom = r.notStarted + r.doing + r.done;
+    r.pct = denom ? Math.round((r.done / denom) * 100) : 0;
+    statsById[id] = r;
+  }
 
   const configured = results.filter((r) => r.tree !== null);
 
@@ -57,7 +79,7 @@ export default async function ProjectsPage() {
             </div>
           </div>
 
-          <ProjectExplorer parents={db.tree!.parents} dbLabel={db.label} />
+          <ProjectExplorer parents={db.tree!.parents} dbLabel={db.label} statsById={statsById} />
         </div>
       ))}
     </div>

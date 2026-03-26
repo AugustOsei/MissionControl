@@ -5,9 +5,23 @@ import type { ProjectNode } from "@/lib/notion/projects";
 import { ProjectModal } from "@/components/projects/ProjectModal";
 import { ProjectsGrid } from "@/components/projects/ProjectsGrid";
 
+export type ProjectStats = {
+  notStarted: number;
+  doing: number;
+  done: number;
+  archived: number;
+  pct: number; // 0-100
+};
+
 export type FlatProject = {
   id: string;
   name: string;
+  status?: string;
+  priorityBand?: string;
+  start?: string;
+  due?: string;
+  progressMode?: string;
+  nextAction?: string;
   pillar?: string;
   level?: string;
   parentId?: string;
@@ -16,9 +30,10 @@ export type FlatProject = {
   repoUrl?: string;
   docsUrl?: string;
   url?: string;
+  stats?: ProjectStats;
 };
 
-function flatten(nodes: ProjectNode[]): FlatProject[] {
+function flatten(nodes: ProjectNode[], statsById?: Record<string, ProjectStats>): FlatProject[] {
   const out: FlatProject[] = [];
   const stack = [...nodes];
   while (stack.length) {
@@ -26,6 +41,12 @@ function flatten(nodes: ProjectNode[]): FlatProject[] {
     out.push({
       id: n.id,
       name: n.name,
+      status: n.status,
+      priorityBand: n.priorityBand,
+      start: n.start,
+      due: n.due,
+      progressMode: n.progressMode,
+      nextAction: n.nextAction,
       pillar: n.pillar,
       level: n.level,
       parentId: n.parentId,
@@ -34,6 +55,7 @@ function flatten(nodes: ProjectNode[]): FlatProject[] {
       repoUrl: n.repoUrl,
       docsUrl: n.docsUrl,
       url: n.url,
+      stats: statsById?.[n.id],
     });
     for (const c of n.children) stack.push(c);
   }
@@ -43,13 +65,15 @@ function flatten(nodes: ProjectNode[]): FlatProject[] {
 export function ProjectExplorer({
   parents,
   dbLabel,
+  statsById,
 }: {
   parents: ProjectNode[];
   dbLabel: string;
+  statsById?: Record<string, ProjectStats>;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const allProjects = useMemo(() => flatten(parents), [parents]);
+  const allProjects = useMemo(() => flatten(parents, statsById), [parents, statsById]);
   const selected = useMemo(
     () => allProjects.find((p) => p.id === openId) ?? null,
     [allProjects, openId],
