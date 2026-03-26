@@ -5,8 +5,11 @@ export type Task = {
   title: string;
   status: string;
   priority?: string;
+  bucket?: string;
+  due?: string;
   assignee?: string;
   projectName?: string;
+  projectId?: string;
   summary?: string;
   updatedAt: string;
   updatedAtLabel: string;
@@ -36,6 +39,14 @@ function statusName(prop: any): string | undefined {
 function peopleName(prop: any): string | undefined {
   const p = prop?.people ?? [];
   return p[0]?.name;
+}
+
+function dateStart(prop: any): string | undefined {
+  return prop?.date?.start;
+}
+
+function relationFirstId(prop: any): string | undefined {
+  return (prop?.relation ?? [])[0]?.id;
 }
 
 function startOfWeek(d: Date) {
@@ -73,8 +84,11 @@ export async function getTasksForBoard(): Promise<Task[]> {
       title,
       status,
       priority: selectName(props.Priority) ?? selectName(props["Priority band"]),
+      bucket: selectName(props.Bucket),
+      due: dateStart(props.Due),
       assignee: peopleName(props.Assignee),
-      projectName: undefined, // TODO: resolve relation -> projects DB
+      projectId: relationFirstId(props.Project),
+      projectName: undefined, // resolved client-side where needed
       summary: plainRichText(props.Notes) || plainRichText(props["Status Summary"]),
       updatedAt,
       updatedAtLabel: updatedDate.toISOString().slice(0, 10),

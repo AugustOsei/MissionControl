@@ -5,17 +5,17 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Task } from "@/lib/notion/tasks";
 
 const PRIORITY_STRIP: Record<string, string> = {
-  Urgent: "#ef4444",
-  High:   "#f97316",
-  Medium: "#eab308",
-  Low:    "#64748b",
+  P0: "#ef4444",
+  P1: "#f97316",
+  P2: "#eab308",
+  P3: "#64748b",
 };
 
 const PRIORITY_BADGE: Record<string, string> = {
-  Urgent: "badge-urgent",
-  High:   "badge-high",
-  Medium: "badge-medium",
-  Low:    "badge-low",
+  P0: "badge-urgent",
+  P1: "badge-high",
+  P2: "badge-medium",
+  P3: "badge-low",
 };
 
 type Props = {
