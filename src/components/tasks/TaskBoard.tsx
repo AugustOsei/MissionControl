@@ -91,8 +91,8 @@ function Column({
   );
 }
 
-export function TaskBoard({ tasks: initialTasks, showDone = false }: { tasks: Task[]; showDone?: boolean }) {
-  const [tasks, setTasks] = useState(initialTasks.filter((t) => showDone ? true : t.status !== "Done"));
+export function TaskBoard({ tasks: initialTasks }: { tasks: Task[] }) {
+  const [tasks, setTasks] = useState(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [draggingOver, setDraggingOver] = useState<string | null>(null);
   const [modalTask, setModalTask] = useState<Task | null>(null);
