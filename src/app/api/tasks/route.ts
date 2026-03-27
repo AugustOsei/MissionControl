@@ -2,7 +2,7 @@ import { requireEnv } from "@/lib/notion/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const { title, status = "Backlog", bucket = "Task" } = await req.json();
+  const { title, status = "Backlog", bucket = "Task", projectId = null } = await req.json();
 
   if (!title?.trim()) {
     return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
         Name: { title: [{ text: { content: title.trim() } }] },
         Status: { select: { name: status } },
         Bucket: { select: { name: bucket } },
+        ...(projectId ? { Project: { relation: [{ id: projectId }] } } : {}),
       },
     }),
   });

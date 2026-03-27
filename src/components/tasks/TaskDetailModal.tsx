@@ -14,20 +14,23 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const PRIORITY_COLOR: Record<string, string> = {
-  Urgent: "text-red-400 bg-red-500/15 border-red-500/30",
-  High:   "text-orange-400 bg-orange-500/15 border-orange-500/30",
-  Medium: "text-yellow-400 bg-yellow-500/15 border-yellow-500/30",
-  Low:    "text-slate-400 bg-slate-500/15 border-slate-500/30",
+  P0: "text-red-400 bg-red-500/15 border-red-500/30",
+  P1: "text-orange-400 bg-orange-500/15 border-orange-500/30",
+  P2: "text-yellow-400 bg-yellow-500/15 border-yellow-500/30",
+  P3: "text-slate-400 bg-slate-500/15 border-slate-500/30",
 };
 
 type Props = {
   task: Task;
+  projects: Array<{ id: string; name: string }>;
   onClose: () => void;
   onStatusChange: (taskId: string, newStatus: string) => void;
+  onTaskPatched: (patch: Partial<Task>) => void;
 };
 
-export function TaskDetailModal({ task, onClose, onStatusChange }: Props) {
+export function TaskDetailModal({ task, projects, onClose, onStatusChange, onTaskPatched }: Props) {
   const [status, setStatus] = useState(task.status);
+  const [projectId, setProjectId] = useState<string>(task.projectId ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,28 +50,38 @@ export function TaskDetailModal({ task, onClose, onStatusChange }: Props) {
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  async function saveStatus(newStatus: string) {
-    if (newStatus === task.status) return;
+  async function patchTask(patch: any) {
     setSaving(true);
     setError(null);
 
     const res = await fetch(`/api/tasks/${task.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
+      body: JSON.stringify(patch),
     });
 
     setSaving(false);
 
     if (!res.ok) {
       setError("Failed to update — check Notion connection");
+      return false;
+    }
+
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    return true;
+  }
+
+  async function saveStatus(newStatus: string) {
+    if (newStatus === task.status) return;
+    const ok = await patchTask({ status: newStatus });
+    if (!ok) {
       setStatus(task.status);
       return;
     }
 
-    setSaved(true);
     onStatusChange(task.id, newStatus);
-    setTimeout(() => setSaved(false), 2000);
+    onTaskPatched({ status: newStatus });
   }
 
   const priorityClass = task.priority ? (PRIORITY_COLOR[task.priority] ?? PRIORITY_COLOR.Low) : null;
@@ -125,6 +138,33 @@ export function TaskDetailModal({ task, onClose, onStatusChange }: Props) {
             {saving && <div className="text-[11px] text-white/35 font-mono">Saving to Notion…</div>}
             {saved  && <div className="text-[11px] text-green-400 font-mono">✓ Synced to Notion</div>}
             {error  && <div className="text-[11px] text-red-400 font-mono">{error}</div>}
+          </div>
+
+          {/* Project */}
+          <div className="space-y-1.5">
+            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Project</div>
+            <select
+              value={projectId}
+              disabled={saving}
+              onChange={async (e) => {
+                const next = e.target.value;
+                setProjectId(next);
+                const ok = await patchTask({ projectId: next || null });
+                if (!ok) {
+                  setProjectId(task.projectId ?? "");
+                  return;
+                }
+                onTaskPatched({ projectId: next || undefined, projectName: next ? projects.find((p) => p.id === next)?.name : undefined });
+              }}
+              className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-white/80 outline-none"
+            >
+              <option value="" className="bg-neutral-900">(none)</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id} className="bg-neutral-900">
+                  {p.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Meta row */}

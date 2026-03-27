@@ -27,7 +27,7 @@ function dueDayKeyLocal(iso?: string) {
   return dayKeyLocal(d);
 }
 
-export function TasksWorkspace({ tasks }: { tasks: Task[] }) {
+export function TasksWorkspace({ tasks, projects }: { tasks: Task[]; projects: Array<{ id: string; name: string }> }) {
   const [showDone, setShowDone] = useState(false);
 
   const todayKey = useMemo(() => dayKeyLocal(new Date()), []);
@@ -131,7 +131,7 @@ export function TasksWorkspace({ tasks }: { tasks: Task[] }) {
           </button>
         </div>
 
-        <TaskBoard tasks={work} />
+        <TaskBoard tasks={work} projects={projects} />
     </div>
   );
 }

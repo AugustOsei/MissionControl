@@ -6,10 +6,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { status } = await req.json();
+  const { status, projectId } = await req.json();
 
-  if (!status) {
-    return NextResponse.json({ error: "status is required" }, { status: 400 });
+  if (!status && status !== undefined && !projectId) {
+    return NextResponse.json({ error: "at least one field is required" }, { status: 400 });
   }
 
   const key = requireEnv("NOTION_API_KEY");
@@ -23,7 +23,12 @@ export async function PATCH(
     },
     body: JSON.stringify({
       properties: {
-        Status: { select: { name: status } },
+        ...(status !== undefined ? { Status: { select: { name: status } } } : {}),
+        ...(projectId !== undefined
+          ? projectId
+            ? { Project: { relation: [{ id: projectId }] } }
+            : { Project: { relation: [] } }
+          : {}),
       },
     }),
   });

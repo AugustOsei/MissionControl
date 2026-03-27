@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { useDroppable } from "@dnd-kit/core";
 import { TaskCard } from "@/components/tasks/TaskCard";
@@ -97,8 +97,21 @@ function Column({
   );
 }
 
-export function TaskBoard({ tasks: initialTasks }: { tasks: Task[] }) {
+export function TaskBoard({ tasks: initialTasks, projects }: { tasks: Task[]; projects: Array<{ id: string; name: string }> }) {
   const [tasks, setTasks] = useState(initialTasks);
+
+  const projectNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of projects) m.set(p.id, p.name);
+    return m;
+  }, [projects]);
+
+  const tasksWithNames = useMemo(() => {
+    return tasks.map((t) => ({
+      ...t,
+      projectName: t.projectId ? (projectNameById.get(t.projectId) ?? t.projectName) : t.projectName,
+    }));
+  }, [tasks, projectNameById]);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [draggingOver, setDraggingOver] = useState<string | null>(null);
   const [modalTask, setModalTask] = useState<Task | null>(null);
@@ -109,12 +122,12 @@ export function TaskBoard({ tasks: initialTasks }: { tasks: Task[] }) {
 
   const byStatus = new Map<string, Task[]>();
   for (const c of COLS) byStatus.set(c.key, []);
-  for (const t of tasks) {
+  for (const t of tasksWithNames) {
     const key = byStatus.has(t.status) ? t.status : "Backlog";
     byStatus.get(key)!.push(t);
   }
 
-  const total = tasks.length;
+  const total = tasksWithNames.length;
   const done = (byStatus.get("Done") ?? []).length;
   const inProgress = (byStatus.get("Doing") ?? []).length;
   const completion = total ? Math.round((done / total) * 100) : 0;
@@ -237,8 +250,13 @@ export function TaskBoard({ tasks: initialTasks }: { tasks: Task[] }) {
       {modalTask && (
         <TaskDetailModal
           task={modalTask}
+          projects={projects}
           onClose={() => setModalTask(null)}
           onStatusChange={handleStatusChange}
+          onTaskPatched={(patch) => {
+            setTasks((prev) => prev.map((t) => (t.id === modalTask.id ? { ...t, ...patch } : t)));
+            setModalTask((m) => (m?.id === modalTask.id ? { ...m, ...patch } : m));
+          }}
         />
       )}
     </>

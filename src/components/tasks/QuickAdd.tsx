@@ -5,11 +5,18 @@ import { useRouter } from "next/navigation";
 
 const STATUSES = ["Backlog", "Todo", "Doing"]; // work statuses
 
-export function QuickAdd({ defaultMode }: { defaultMode?: "Task" | "Idea" } = {}) {
+export function QuickAdd({
+  defaultMode,
+  projects = [],
+}: {
+  defaultMode?: "Task" | "Idea";
+  projects?: Array<{ id: string; name: string }>;
+} = {}) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [mode, setMode] = useState<"Task" | "Idea">(defaultMode ?? "Task");
   const [status, setStatus] = useState("Todo");
+  const [projectId, setProjectId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [flash, setFlash] = useState(false);
@@ -26,6 +33,7 @@ export function QuickAdd({ defaultMode }: { defaultMode?: "Task" | "Idea" } = {}
         title: title.trim(),
         status: mode === "Idea" ? "Backlog" : status,
         bucket: mode,
+        projectId: mode === "Task" ? (projectId || null) : null,
       }),
     });
 
@@ -88,17 +96,32 @@ export function QuickAdd({ defaultMode }: { defaultMode?: "Task" | "Idea" } = {}
         </div>
 
         {mode === "Task" && (
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-white/70 focus:outline-none"
-          >
-            {STATUSES.map((s) => (
-              <option key={s} value={s} className="bg-neutral-900">
-                {s}
-              </option>
-            ))}
-          </select>
+          <>
+            <select
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              className="rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-white/70 focus:outline-none"
+            >
+              <option value="" className="bg-neutral-900">Project (none)</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id} className="bg-neutral-900">
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-white/70 focus:outline-none"
+            >
+              {STATUSES.map((s) => (
+                <option key={s} value={s} className="bg-neutral-900">
+                  {s}
+                </option>
+              ))}
+            </select>
+          </>
         )}
         <button
           onClick={submit}
