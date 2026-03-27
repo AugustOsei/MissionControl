@@ -11,6 +11,7 @@ export type NewsItem = {
   createdAt?: string;
   pillar?: string;
   businessValue?: string;
+  approved?: boolean;
 };
 
 function plainTitle(prop: unknown): string {
@@ -32,6 +33,11 @@ function dateStart(prop: unknown): string | undefined {
 function urlValue(prop: unknown): string | undefined {
   const p = prop as { url?: string };
   return p?.url;
+}
+
+function checkboxValue(prop: unknown): boolean | undefined {
+  const p = prop as { checkbox?: boolean };
+  return p?.checkbox;
 }
 
 export async function getNewsFeed(limit = 50): Promise<NewsItem[]> {
@@ -67,6 +73,7 @@ export async function getNewsFeed(limit = 50): Promise<NewsItem[]> {
       createdAt: page.created_time,
       pillar: selectName(props.Pillar),
       businessValue: selectName(props["Business Value"]),
+      approved: checkboxValue(props.Approved),
     };
   });
 }

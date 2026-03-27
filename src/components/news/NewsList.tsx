@@ -22,24 +22,86 @@ function effectiveDate(x: NewsItem) {
 export function NewsList({ items }: { items: NewsItem[] }) {
   const [q, setQ] = useState("");
   const [windowDays, setWindowDays] = useState<7 | 30 | 3650>(7);
+  const [tab, setTab] = useState<"new" | "approved" | "archived" | "all">("new");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
+
     return items
       .filter((x) => {
         if (windowDays !== 3650 && !inWindow(effectiveDate(x), windowDays)) return false;
         if (needle && !x.title.toLowerCase().includes(needle)) return false;
+
+        const st = (x.status ?? "").toLowerCase();
+        const isArchived = st === "archive" || st === "abandoned";
+        const isApproved = Boolean(x.approved) || st === "ready" || st === "scheduled" || st === "published";
+
+        if (tab === "new" && (isArchived || isApproved)) return false;
+        if (tab === "approved" && !isApproved) return false;
+        if (tab === "archived" && !isArchived) return false;
         return true;
       })
       .slice(0, 200);
-  }, [items, q, windowDays]);
+  }, [items, q, windowDays, tab]);
+
+  async function patch(id: string, body: any) {
+    setBusyId(id);
+    try {
+      await fetch(`/api/news/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const counts = useMemo(() => {
+    let newC = 0,
+      appr = 0,
+      arch = 0;
+    for (const x of items) {
+      const st = (x.status ?? "").toLowerCase();
+      const isArchived = st === "archive" || st === "abandoned";
+      const isApproved = Boolean(x.approved) || st === "ready" || st === "scheduled" || st === "published";
+      if (isArchived) arch++;
+      else if (isApproved) appr++;
+      else newC++;
+    }
+    return { newC, appr, arch };
+  }, [items]);
 
   return (
     <div className="space-y-3">
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="text-sm text-white/70">
-            Showing <span className="font-semibold text-white/80">{filtered.length}</span> items
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2">
+            <div className="text-sm text-white/70">
+              Showing <span className="font-semibold text-white/80">{filtered.length}</span> items
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {([
+                ["new", `New (${counts.newC})`],
+                ["approved", `Approved (${counts.appr})`],
+                ["archived", `Archived (${counts.arch})`],
+                ["all", "All"],
+              ] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  onClick={() => setTab(k)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-mono transition-colors ${
+                    tab === k
+                      ? "border-blue-500/30 bg-blue-500/10 text-blue-200"
+                      : "border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:text-white/80"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
@@ -102,6 +164,21 @@ export function NewsList({ items }: { items: NewsItem[] }) {
               </div>
 
               <div className="hidden md:flex md:col-span-3 items-start justify-end gap-2 text-[11px] font-mono">
+                <button
+                  disabled={busyId === x.id}
+                  onClick={() => patch(x.id, { approved: true, status: "Ready" })}
+                  className="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-green-200 hover:bg-green-500/15 disabled:opacity-40"
+                >
+                  approve
+                </button>
+                <button
+                  disabled={busyId === x.id}
+                  onClick={() => patch(x.id, { status: "Archive" })}
+                  className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/60 hover:border-white/20 hover:text-white/80 disabled:opacity-40"
+                >
+                  archive
+                </button>
+
                 {x.businessValue && (
                   <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-amber-200">
                     {x.businessValue}
