@@ -20,6 +20,10 @@ function effectiveDate(x: NewsItem) {
   return x.submittedAt || x.createdAt;
 }
 
+function primaryUrl(x: NewsItem) {
+  return x.wordpressUrl || x.canonicalUrl || x.sourceUrl;
+}
+
 export function NewsList({ items }: { items: NewsItem[] }) {
   const router = useRouter();
   const [localItems, setLocalItems] = useState<NewsItem[]>(items);
@@ -28,6 +32,7 @@ export function NewsList({ items }: { items: NewsItem[] }) {
   const [tab, setTab] = useState<"new" | "approved" | "archived" | "all">("new");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -159,74 +164,146 @@ export function NewsList({ items }: { items: NewsItem[] }) {
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
-        <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[11px] font-mono text-white/40 border-b border-white/10">
-          <div className="col-span-3 md:col-span-2">when</div>
-          <div className="col-span-9 md:col-span-7">headline</div>
-          <div className="hidden md:block md:col-span-3">meta</div>
+        <div className="grid grid-cols-12 gap-3 px-4 py-2 text-[11px] font-mono text-white/40 border-b border-white/10">
+          <div className="col-span-2">when</div>
+          <div className="col-span-7">headline</div>
+          <div className="col-span-3 text-right">actions</div>
         </div>
 
         <div className="divide-y divide-white/10">
-          {filtered.map((x) => (
-            <div key={x.id} className="grid grid-cols-12 gap-2 px-4 py-3 hover:bg-white/5">
-              <div className="col-span-3 md:col-span-2 text-[11px] font-mono text-white/35">
-                {shortDate(effectiveDate(x))}
-              </div>
+          {filtered.map((x) => {
+            const url = primaryUrl(x);
+            const isOpen = openId === x.id;
+            const wp = x.wordpressUrl;
 
-              <div className="col-span-9 md:col-span-7 min-w-0">
-                {x.url ? (
-                  <a
-                    href={x.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-sm text-white/85 hover:text-white underline decoration-white/10 hover:decoration-white/25 transition-colors line-clamp-2"
-                  >
-                    {x.title}
-                  </a>
-                ) : (
-                  <div className="text-sm text-white/85 line-clamp-2">{x.title}</div>
-                )}
-                <div className="mt-1 text-[11px] font-mono text-white/45">
-                  {(x.source ?? "source?")}{x.pillar ? ` · ${x.pillar}` : ""}
-                </div>
-              </div>
-
-              <div className="hidden md:flex md:col-span-3 items-start justify-end gap-2 text-[11px] font-mono">
+            return (
+              <div key={x.id} className="hover:bg-white/5">
                 <button
-                  disabled={busyId === x.id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    patch(x.id, { approved: true, status: "Ready" });
-                  }}
-                  className="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-green-200 hover:bg-green-500/15 disabled:opacity-40"
+                  type="button"
+                  onClick={() => setOpenId((cur) => (cur === x.id ? null : x.id))}
+                  className="w-full grid grid-cols-12 gap-3 px-4 py-3 text-left"
                 >
-                  approve
-                </button>
-                <button
-                  disabled={busyId === x.id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    patch(x.id, { status: "Archive" });
-                  }}
-                  className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/60 hover:border-white/20 hover:text-white/80 disabled:opacity-40"
-                >
-                  archive
+                  <div className="col-span-2 text-[11px] font-mono text-white/35">
+                    {shortDate(effectiveDate(x))}
+                  </div>
+
+                  <div className="col-span-7 min-w-0">
+                    <div className="text-sm text-white/85 line-clamp-2">{x.title}</div>
+                    <div className="mt-1 text-[11px] font-mono text-white/45">
+                      {(x.source ?? "source?")}{x.pillar ? ` · ${x.pillar}` : ""}
+                    </div>
+                  </div>
+
+                  <div className="col-span-3 flex items-start justify-end gap-2 text-[11px] font-mono">
+                    {wp && (
+                      <a
+                        href={wp}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded-full border border-purple-500/25 bg-purple-500/10 px-2 py-0.5 text-purple-200 hover:bg-purple-500/15"
+                      >
+                        wp
+                      </a>
+                    )}
+                    <button
+                      disabled={busyId === x.id}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        patch(x.id, { approved: true, status: "Ready" });
+                      }}
+                      className="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-green-200 hover:bg-green-500/15 disabled:opacity-40"
+                    >
+                      approve
+                    </button>
+                    <button
+                      disabled={busyId === x.id}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        patch(x.id, { status: "Archive" });
+                      }}
+                      className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/60 hover:border-white/20 hover:text-white/80 disabled:opacity-40"
+                    >
+                      archive
+                    </button>
+                  </div>
                 </button>
 
-                {x.businessValue && (
-                  <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-amber-200">
-                    {x.businessValue}
-                  </span>
-                )}
-                {x.status && (
-                  <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/60">
-                    {x.status}
-                  </span>
+                {isOpen && (
+                  <div className="px-4 pb-4">
+                    <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                      <div className="flex flex-wrap gap-2 items-center">
+                        {x.businessValue && (
+                          <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-mono text-amber-200">
+                            {x.businessValue}
+                          </span>
+                        )}
+                        {x.status && (
+                          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-mono text-white/60">
+                            {x.status}
+                          </span>
+                        )}
+                        {Boolean(x.approved) && (
+                          <span className="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-[11px] font-mono text-green-200">
+                            approved
+                          </span>
+                        )}
+                      </div>
+
+                      {x.notes ? (
+                        <div className="mt-3 text-sm text-white/75 whitespace-pre-wrap leading-relaxed">
+                          {x.notes}
+                        </div>
+                      ) : (
+                        <div className="mt-3 text-xs font-mono text-white/35">
+                          No notes yet. (We can auto-summarize into Notes later.)
+                        </div>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {x.canonicalUrl && (
+                          <a
+                            href={x.canonicalUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-full border border-blue-500/25 bg-blue-500/10 px-3 py-1 text-xs font-mono text-blue-200 hover:bg-blue-500/15"
+                          >
+                            open canonical ↗
+                          </a>
+                        )}
+                        {!x.canonicalUrl && url && (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-full border border-blue-500/25 bg-blue-500/10 px-3 py-1 text-xs font-mono text-blue-200 hover:bg-blue-500/15"
+                          >
+                            open ↗
+                          </a>
+                        )}
+                        {x.wordpressUrl && (
+                          <a
+                            href={x.wordpressUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-full border border-purple-500/25 bg-purple-500/10 px-3 py-1 text-xs font-mono text-purple-200 hover:bg-purple-500/15"
+                          >
+                            WordPress ↗
+                          </a>
+                        )}
+                      </div>
+
+                      <div className="mt-2 text-[11px] font-mono text-white/35">
+                        Tip: once the writer job runs, it should populate <span className="text-white/50">WordPress URL</span>. You’ll access the finished post from the <span className="text-white/50">Approved</span> tab.
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {filtered.length === 0 && (
             <div className="px-4 py-10 text-center text-sm text-white/35 font-mono">

@@ -6,12 +6,19 @@ export type NewsItem = {
   source?: string;
   status?: string;
   type?: string;
-  url?: string;
+
+  // URLs
+  canonicalUrl?: string;
+  sourceUrl?: string;
+  wordpressUrl?: string;
+
   submittedAt?: string;
   createdAt?: string;
   pillar?: string;
   businessValue?: string;
   approved?: boolean;
+
+  notes?: string;
 };
 
 function plainTitle(prop: unknown): string {
@@ -23,6 +30,13 @@ function plainTitle(prop: unknown): string {
 function selectName(prop: unknown): string | undefined {
   const p = prop as { select?: { name?: string } };
   return p?.select?.name;
+}
+
+function richTextPlain(prop: unknown): string | undefined {
+  const p = prop as { rich_text?: Array<{ plain_text?: string }> };
+  const t = p?.rich_text ?? [];
+  const s = t.map((x) => x.plain_text ?? "").join("").trim();
+  return s || undefined;
 }
 
 function dateStart(prop: unknown): string | undefined {
@@ -65,15 +79,17 @@ export async function getNewsFeed(limit = 50): Promise<NewsItem[]> {
       source: selectName(props.Source),
       status: selectName(props.Status),
       type: selectName(props.Type),
-      url:
-        urlValue(props["Canonical URL"]) ??
-        urlValue(props["Source URL"]) ??
-        urlValue(props["WordPress URL"]),
+
+      canonicalUrl: urlValue(props["Canonical URL"]),
+      sourceUrl: urlValue(props["Source URL"]),
+      wordpressUrl: urlValue(props["WordPress URL"]),
+
       submittedAt,
       createdAt: page.created_time,
       pillar: selectName(props.Pillar),
       businessValue: selectName(props["Business Value"]),
       approved: checkboxValue(props.Approved),
+      notes: richTextPlain(props.Notes),
     };
   });
 }
