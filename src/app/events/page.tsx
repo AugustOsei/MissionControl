@@ -69,7 +69,35 @@ export default async function EventsPage() {
       href: `https://notion.so/${p.id.replace(/-/g, "")}`,
     }));
 
-  const rows = [...taskEvents, ...projectEvents].sort((a, b) => {
+  // Google Calendar (via proxy)
+  let calEvents: EventRow[] = [];
+  try {
+    const start = today;
+    const end = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 14);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    })();
+
+    const base = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+    const res = await fetch(`${base}/api/calendar?start=${start}&end=${end}`, { cache: "no-store" });
+    const body: any = await res.json().catch(() => ({}));
+    const evs = body.events ?? [];
+    calEvents = evs.map((e: any) => ({
+      kind: "calendar",
+      title: e.summary || e.title || "(event)",
+      date: e.date,
+      detail: e.time ? `${e.time}${e.location ? ` · ${e.location}` : ""}` : e.location,
+      href: e.htmlLink,
+    }));
+  } catch {
+    // ignore
+  }
+
+  const rows = [...calEvents, ...taskEvents, ...projectEvents].sort((a, b) => {
     const d = a.date.localeCompare(b.date);
     if (d !== 0) return d;
     return a.kind.localeCompare(b.kind);
@@ -85,10 +113,10 @@ export default async function EventsPage() {
         <p className="text-sm text-white/60">Unified timeline: Calendar + due dates.</p>
       </div>
 
-      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-100">
-        <div className="text-sm font-semibold">Google Calendar (coming next)</div>
-        <div className="mt-1 text-xs text-amber-100/80">
-          Notion due dates are live now. Google Calendar requires a server-side integration for Vercel (we can wire it via a secure proxy or OAuth env vars).
+      <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
+        <div className="text-sm font-semibold text-white/80">Sources</div>
+        <div className="mt-1 text-xs text-white/50">
+          Google Calendar (via VM proxy) + Notion due dates (tasks/projects). Done tasks hidden.
         </div>
       </div>
 
