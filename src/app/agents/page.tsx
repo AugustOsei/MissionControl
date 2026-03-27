@@ -14,9 +14,9 @@ export default async function AgentsPage() {
 
   // We treat Ops Events (Source=agent) as the durable, secure way to show agent activity.
   // Live session listing from the Gateway can be added later once a stable JSON endpoint is exposed.
-  const events = await getOpsEvents(120).catch(() => []);
+  const events = await getOpsEvents(200).catch(() => []);
 
-  // Agents page should be *agent/subagent* activity (not cron). Cron belongs in /ops.
+  // Agents page is the "August did stuff" feed. Keep it pure: Source=agent.
   const agentEvents = events.filter((e) => (e.source ?? "").toLowerCase() === "agent");
 
   return (
