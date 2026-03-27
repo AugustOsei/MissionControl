@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { NewsItem } from "@/lib/notion/news";
 
 function shortDate(iso?: string) {
@@ -20,15 +21,18 @@ function effectiveDate(x: NewsItem) {
 }
 
 export function NewsList({ items }: { items: NewsItem[] }) {
+  const router = useRouter();
+  const [localItems, setLocalItems] = useState<NewsItem[]>(items);
   const [q, setQ] = useState("");
   const [windowDays, setWindowDays] = useState<7 | 30 | 3650>(7);
   const [tab, setTab] = useState<"new" | "approved" | "archived" | "all">("new");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
 
-    return items
+    return localItems
       .filter((x) => {
         if (windowDays !== 3650 && !inWindow(effectiveDate(x), windowDays)) return false;
         if (needle && !x.title.toLowerCase().includes(needle)) return false;
@@ -43,16 +47,38 @@ export function NewsList({ items }: { items: NewsItem[] }) {
         return true;
       })
       .slice(0, 200);
-  }, [items, q, windowDays, tab]);
+  }, [localItems, q, windowDays, tab]);
 
   async function patch(id: string, body: any) {
     setBusyId(id);
+    setErr(null);
     try {
-      await fetch(`/api/news/${id}`, {
+      const res = await fetch(`/api/news/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        throw new Error(b.error ?? `HTTP ${res.status}`);
+      }
+
+      // Optimistic local update so it feels instant.
+      setLocalItems((prev) =>
+        prev.map((x) => {
+          if (x.id !== id) return x;
+          const next = { ...x } as any;
+          if (body.approved !== undefined) next.approved = Boolean(body.approved);
+          if (body.status !== undefined) next.status = body.status;
+          return next;
+        }),
+      );
+
+      // Also refresh server data in the background.
+      router.refresh();
+    } catch (e: any) {
+      setErr(String(e?.message ?? e));
     } finally {
       setBusyId(null);
     }
@@ -62,7 +88,7 @@ export function NewsList({ items }: { items: NewsItem[] }) {
     let newC = 0,
       appr = 0,
       arch = 0;
-    for (const x of items) {
+    for (const x of localItems) {
       const st = (x.status ?? "").toLowerCase();
       const isArchived = st === "archive" || st === "abandoned";
       const isApproved = Boolean(x.approved) || st === "ready" || st === "scheduled" || st === "published";
@@ -71,7 +97,7 @@ export function NewsList({ items }: { items: NewsItem[] }) {
       else newC++;
     }
     return { newC, appr, arch };
-  }, [items]);
+  }, [localItems]);
 
   return (
     <div className="space-y-3">
@@ -80,6 +106,7 @@ export function NewsList({ items }: { items: NewsItem[] }) {
           <div className="space-y-2">
             <div className="text-sm text-white/70">
               Showing <span className="font-semibold text-white/80">{filtered.length}</span> items
+              {err && <span className="ml-3 text-xs font-mono text-red-300">{err}</span>}
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -166,14 +193,22 @@ export function NewsList({ items }: { items: NewsItem[] }) {
               <div className="hidden md:flex md:col-span-3 items-start justify-end gap-2 text-[11px] font-mono">
                 <button
                   disabled={busyId === x.id}
-                  onClick={() => patch(x.id, { approved: true, status: "Ready" })}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    patch(x.id, { approved: true, status: "Ready" });
+                  }}
                   className="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-green-200 hover:bg-green-500/15 disabled:opacity-40"
                 >
                   approve
                 </button>
                 <button
                   disabled={busyId === x.id}
-                  onClick={() => patch(x.id, { status: "Archive" })}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    patch(x.id, { status: "Archive" });
+                  }}
                   className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/60 hover:border-white/20 hover:text-white/80 disabled:opacity-40"
                 >
                   archive
