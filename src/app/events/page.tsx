@@ -1,15 +1,9 @@
-import { getTasksForBoard } from "@/lib/notion/tasks";
+import { EventsCalendar, type EventRow } from "@/components/events/EventsCalendar";
 import { getProjectsTreeForDb } from "@/lib/notion/projects";
+import { getTasksForBoard } from "@/lib/notion/tasks";
 
 export const dynamic = "force-dynamic";
 
-type EventRow = {
-  kind: "calendar" | "task" | "project";
-  title: string;
-  date: string; // YYYY-MM-DD
-  detail?: string;
-  href?: string;
-};
 
 function dayKey(iso?: string): string | null {
   if (!iso) return null;
@@ -69,35 +63,7 @@ export default async function EventsPage() {
       href: `https://notion.so/${p.id.replace(/-/g, "")}`,
     }));
 
-  // Google Calendar (via proxy)
-  let calEvents: EventRow[] = [];
-  try {
-    const start = today;
-    const end = (() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 14);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    })();
-
-    const base = process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-    const res = await fetch(`${base}/api/calendar?start=${start}&end=${end}`, { cache: "no-store" });
-    const body: any = await res.json().catch(() => ({}));
-    const evs = body.events ?? [];
-    calEvents = evs.map((e: any) => ({
-      kind: "calendar",
-      title: e.summary || e.title || "(event)",
-      date: e.date,
-      detail: e.time ? `${e.time}${e.location ? ` · ${e.location}` : ""}` : e.location,
-      href: e.htmlLink,
-    }));
-  } catch {
-    // ignore
-  }
-
-  const rows = [...calEvents, ...taskEvents, ...projectEvents].sort((a, b) => {
+  const rows = [...taskEvents, ...projectEvents].sort((a, b) => {
     const d = a.date.localeCompare(b.date);
     if (d !== 0) return d;
     return a.kind.localeCompare(b.kind);
@@ -114,11 +80,13 @@ export default async function EventsPage() {
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
-        <div className="text-sm font-semibold text-white/80">Sources</div>
+        <div className="text-sm font-semibold text-white/80">Source</div>
         <div className="mt-1 text-xs text-white/50">
-          Google Calendar (via VM proxy) + Notion due dates (tasks/projects). Done tasks hidden.
+          Notion due dates (tasks/projects). Done tasks hidden. Only due items appear on the calendar.
         </div>
       </div>
+
+      <EventsCalendar rows={rows} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
@@ -154,7 +122,7 @@ export default async function EventsPage() {
         <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
           <div className="px-4 py-3 border-b border-white/10">
             <div className="text-sm font-semibold text-white/85">Upcoming</div>
-            <div className="text-xs text-white/50">Next 40 items</div>
+            <div className="text-xs text-white/50">Next 40 due items</div>
           </div>
           <div className="divide-y divide-white/10">
             {upcoming.length === 0 && (
