@@ -32,8 +32,7 @@ export function TasksWorkspace({ tasks }: { tasks: Task[] }) {
 
   const todayKey = useMemo(() => dayKeyLocal(new Date()), []);
 
-  const ideas = useMemo(() => tasks.filter(isIdea), [tasks]);
-
+  // Tasks workspace is for execution. Ideas live on /ideas.
   const workAll = useMemo(() => tasks.filter((t) => !isIdea(t)), [tasks]);
   const work = useMemo(
     () => (showDone ? workAll : workAll.filter((t) => !isDone(t))),
@@ -64,8 +63,7 @@ export function TasksWorkspace({ tasks }: { tasks: Task[] }) {
   }, [dueItems, todayKey]);
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <div className="lg:col-span-2 space-y-4">
+    <div className="space-y-4">
         <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
             <div>
@@ -134,38 +132,6 @@ export function TasksWorkspace({ tasks }: { tasks: Task[] }) {
         </div>
 
         <TaskBoard tasks={work} />
-      </div>
-
-      <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-          <div>
-            <div className="text-sm font-semibold">Ideas</div>
-            <div className="text-xs text-white/50">Quick access</div>
-          </div>
-          <a
-            href="/ideas"
-            className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-mono text-white/60 hover:border-white/20 hover:text-white/80"
-          >
-            open ↗
-          </a>
-        </div>
-        <div className="p-3 space-y-2">
-          {ideas.slice(0, 6).map((t) => (
-            <div key={t.id} className="rounded-lg border border-white/10 bg-black/40 p-3">
-              <div className="text-sm text-white/85 truncate">{t.title}</div>
-              <div className="mt-2 text-[11px] font-mono text-white/30">{t.updatedAtLabel}</div>
-            </div>
-          ))}
-          {ideas.length === 0 && (
-            <div className="rounded-lg border border-dashed border-white/10 p-4 text-xs text-white/35 font-mono text-center">
-              No ideas yet.
-            </div>
-          )}
-          {ideas.length > 6 && (
-            <div className="text-[11px] font-mono text-white/35">+{ideas.length - 6} more…</div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
