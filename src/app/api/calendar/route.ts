@@ -30,8 +30,21 @@ export async function GET(req: Request) {
       cache: "no-store",
     });
 
-    const json = await res.json().catch(() => ({}));
-    return NextResponse.json(json, { status: 200 });
+    const text = await res.text();
+    try {
+      const json = JSON.parse(text);
+      return NextResponse.json(json, { status: 200 });
+    } catch {
+      return NextResponse.json(
+        {
+          events: [],
+          error: `non-json upstream response (${res.status})`,
+          upstreamStatus: res.status,
+          upstreamSnippet: text.slice(0, 300),
+        },
+        { status: 200 },
+      );
+    }
   } catch (e: any) {
     return NextResponse.json({ events: [], error: String(e) }, { status: 200 });
   }
