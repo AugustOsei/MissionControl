@@ -7,13 +7,19 @@ import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import type { Task } from "@/lib/notion/tasks";
 
-const COLS = [
-  { key: "Backlog",  title: "Backlog" },
-  { key: "Todo",     title: "Todo" },
-  { key: "Doing",    title: "Doing" },
-  { key: "Done",     title: "Done" },
+const COLS_MAIN = [
+  { key: "Todo", title: "Todo" },
+  { key: "Doing", title: "Doing" },
+  { key: "Done", title: "Done" },
+] as const;
+
+// Kept accessible, but not crowding the main board.
+const COLS_SECONDARY = [
+  { key: "Backlog", title: "Backlog" },
   { key: "Archived", title: "Archived" },
 ] as const;
+
+const COLS = [...COLS_MAIN, ...COLS_SECONDARY] as const;
 
 const DEFAULT_VISIBLE = 5;
 
@@ -192,8 +198,21 @@ export function TaskBoard({ tasks: initialTasks }: { tasks: Task[] }) {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-5">
-            {COLS.map((c) => (
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+            {COLS_MAIN.map((c) => (
+              <Column
+                key={c.key}
+                colKey={c.key}
+                title={c.title}
+                tasks={byStatus.get(c.key)!}
+                onOpen={setModalTask}
+                isOver={draggingOver === c.key}
+              />
+            ))}
+          </div>
+
+          <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {COLS_SECONDARY.map((c) => (
               <Column
                 key={c.key}
                 colKey={c.key}
