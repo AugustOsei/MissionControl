@@ -31,6 +31,7 @@ type Props = {
 export function TaskDetailModal({ task, projects, onClose, onStatusChange, onTaskPatched }: Props) {
   const [status, setStatus] = useState(task.status);
   const [projectId, setProjectId] = useState<string>(task.projectId ?? "");
+  const [due, setDue] = useState<string>(task.due ? task.due.slice(0, 10) : "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -165,6 +166,45 @@ export function TaskDetailModal({ task, projects, onClose, onStatusChange, onTas
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Due */}
+          <div className="space-y-1.5">
+            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Due</div>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={due}
+                disabled={saving}
+                onChange={async (e) => {
+                  const next = e.target.value;
+                  setDue(next);
+                  const ok = await patchTask({ due: next || null });
+                  if (!ok) {
+                    setDue(task.due ? task.due.slice(0, 10) : "");
+                    return;
+                  }
+                  onTaskPatched({ due: next ? next : undefined });
+                }}
+                className="w-full rounded-lg border border-white/10 bg-black/40 px-2 py-2 text-sm text-white/80 outline-none"
+              />
+              <button
+                type="button"
+                disabled={saving || !due}
+                onClick={async () => {
+                  setDue("");
+                  const ok = await patchTask({ due: null });
+                  if (!ok) {
+                    setDue(task.due ? task.due.slice(0, 10) : "");
+                    return;
+                  }
+                  onTaskPatched({ due: undefined });
+                }}
+                className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-mono text-white/60 hover:border-white/20 hover:text-white/80 disabled:opacity-40 disabled:hover:border-white/10"
+              >
+                clear
+              </button>
+            </div>
           </div>
 
           {/* Meta row */}

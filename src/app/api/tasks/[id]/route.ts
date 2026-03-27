@@ -6,9 +6,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { status, projectId } = await req.json();
+  const { status, projectId, due } = await req.json();
 
-  if (!status && status !== undefined && !projectId) {
+  if (status === undefined && projectId === undefined && due === undefined) {
     return NextResponse.json({ error: "at least one field is required" }, { status: 400 });
   }
 
@@ -28,6 +28,11 @@ export async function PATCH(
           ? projectId
             ? { Project: { relation: [{ id: projectId }] } }
             : { Project: { relation: [] } }
+          : {}),
+        ...(due !== undefined
+          ? due
+            ? { Due: { date: { start: due } } }
+            : { Due: { date: null } }
           : {}),
       },
     }),

@@ -83,6 +83,18 @@ const NAV = [
     ),
   },
   {
+    href: "/events",
+    label: "Events",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <rect x="2" y="2" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.3" opacity="0.7" />
+        <path d="M5 3.8v2.2M11 3.8v2.2" stroke="currentColor" strokeWidth="1.2" opacity="0.55" strokeLinecap="round" />
+        <path d="M4.2 6.4h7.6" stroke="currentColor" strokeWidth="1.2" opacity="0.55" strokeLinecap="round" />
+        <path d="M5.1 8.3h2.6M5.1 10.2h4.2" stroke="currentColor" strokeWidth="1.2" opacity="0.55" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/agents",
     label: "Agents",
     icon: (
