@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 
 import { getOpsEvents } from "@/lib/notion/opsEvents";
@@ -17,6 +18,77 @@ function withinHours(iso: string | undefined, hours: number): boolean {
   const ts = Date.parse(iso);
   if (!Number.isFinite(ts)) return false;
   return ts >= Date.now() - hours * 60 * 60 * 1000;
+}
+
+function renderDigestBlocks(text: string) {
+  const lines = String(text ?? "").split(/\r?\n/);
+  const out: Array<React.ReactElement> = [];
+
+  let list: string[] = [];
+  const flushList = (key: string) => {
+    if (list.length === 0) return;
+    out.push(
+      <ul key={key} className="ml-5 list-disc space-y-1 text-white/80">
+        {list.map((li, i) => (
+          <li key={i} className="break-words">
+            {li}
+          </li>
+        ))}
+      </ul>
+    );
+    list = [];
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i] ?? "";
+    const line = raw.trimEnd();
+
+    // Blank line = paragraph boundary.
+    if (line.trim().length === 0) {
+      flushList(`list-${i}`);
+      continue;
+    }
+
+    // Markdown-ish headings.
+    const h3 = line.match(/^###\s+(.*)$/);
+    const h2 = line.match(/^##\s+(.*)$/);
+    const h1 = line.match(/^#\s+(.*)$/);
+    if (h3 || h2 || h1) {
+      flushList(`list-${i}`);
+      const title = (h3?.[1] ?? h2?.[1] ?? h1?.[1] ?? "").trim();
+      const size = h1 ? "text-base" : h2 ? "text-sm" : "text-sm";
+      out.push(
+        <div key={`h-${i}`} className={`${size} font-semibold text-white/90 mt-2`}>
+          {title}
+        </div>
+      );
+      continue;
+    }
+
+    // Bullets.
+    const bullet = line.match(/^[-*]\s+(.*)$/);
+    if (bullet) {
+      list.push(bullet[1].trim());
+      continue;
+    }
+
+    // Numbered items: treat as list.
+    const numbered = line.match(/^\d+\.\s+(.*)$/);
+    if (numbered) {
+      list.push(numbered[1].trim());
+      continue;
+    }
+
+    flushList(`list-${i}`);
+    out.push(
+      <p key={`p-${i}`} className="break-words text-white/80">
+        {line}
+      </p>
+    );
+  }
+
+  flushList(`list-final`);
+  return out;
 }
 
 export default async function AgentsPage() {
@@ -115,7 +187,9 @@ export default async function AgentsPage() {
           {latestDigest?.message ? (
             <>
               <div className="text-[11px] font-mono text-white/35">Last updated: {shortDate(latestDigest.time)}</div>
-              <pre className="mt-3 text-[12px] leading-5 font-mono text-white/75 whitespace-pre-wrap">{latestDigest.message}</pre>
+              <div className="mt-3 space-y-2 text-sm leading-6 text-white/80">
+                {renderDigestBlocks(latestDigest.message)}
+              </div>
             </>
           ) : (
             <div className="text-xs font-mono text-white/35">No digest logged yet.</div>
