@@ -176,7 +176,7 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
               <div>
                 <div className="text-sm font-semibold">Ops highlights</div>
-                <div className="text-xs text-white/50">What just happened</div>
+                <div className="text-xs text-white/50">Last 24h · warn/error/recovered</div>
               </div>
               <Link href="/ops" className="text-xs font-mono text-white/40 hover:text-white/60">
                 view ↗
