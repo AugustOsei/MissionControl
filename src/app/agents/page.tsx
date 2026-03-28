@@ -4,12 +4,18 @@ import { getLiveSessions } from "@/lib/openclaw/sessions";
 export const dynamic = "force-dynamic";
 
 export default async function AgentsPage() {
+  let liveErr: string | null = null;
   const [gw, sessions] = await Promise.all([
     getGatewayHealth().catch(() => ({ ok: false, status: "offline", url: undefined })),
-    getLiveSessions({ activeMinutes: 24 * 60, limit: 80 }).catch(() => []),
+    getLiveSessions({ activeMinutes: 24 * 60, limit: 80 }).catch((e) => {
+      liveErr = String(e);
+      return [];
+    }),
   ]);
 
-  const activeNow = sessions.filter((s) => (s.ageLabel ?? "").includes("min") || (s.ageLabel ?? "").includes("just"));
+  const activeNow = sessions.filter(
+    (s) => (s.ageLabel ?? "").includes("min") || (s.ageLabel ?? "").includes("just")
+  );
 
   return (
     <div className="space-y-5">
@@ -56,6 +62,16 @@ export default async function AgentsPage() {
           <div className="text-sm font-semibold">Heads up: gateway token missing</div>
           <div className="mt-1 text-xs text-amber-100/80">
             If your gateway requires auth (it should), set <span className="font-mono">OPENCLAW_GATEWAY_TOKEN</span> in the Mission Control env.
+          </div>
+        </div>
+      )}
+
+      {liveErr && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-100">
+          <div className="text-sm font-semibold">Live sessions fetch failed</div>
+          <div className="mt-1 text-xs font-mono text-red-100/80 break-all">{liveErr}</div>
+          <div className="mt-2 text-xs text-red-100/70">
+            Common causes: wrong websocket URL (needs <span className="font-mono">/ws</span>), missing token, or origin not allowlisted.
           </div>
         </div>
       )}

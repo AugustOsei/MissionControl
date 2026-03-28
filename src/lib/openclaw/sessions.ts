@@ -43,13 +43,20 @@ export async function getLiveSessions({
   const token = process.env.OPENCLAW_GATEWAY_TOKEN;
   const origin = process.env.OPENCLAW_CONTROL_ORIGIN ?? process.env.NEXT_PUBLIC_SITE_URL;
 
-  // Ensure ws/wss scheme.
-  const ws = wsUrl.startsWith("http") ? wsUrl.replace(/^http/, "ws") : wsUrl;
+  // Ensure ws/wss scheme + correct websocket path.
+  let ws = wsUrl.startsWith("http") ? wsUrl.replace(/^http/, "ws") : wsUrl;
+  ws = ws.replace(/\/$/, "");
+  if (!ws.endsWith("/ws")) ws = ws + "/ws";
 
   const res = await openclawRpc<SessionsListResponse>(
     "sessions.list",
     { activeMinutes, limit, messageLimit: 0 },
-    { wsUrl: ws, token, origin, timeoutMs: 8000 }
+    {
+      wsUrl: ws,
+      token,
+      origin: origin?.replace(/\/$/, ""),
+      timeoutMs: 8000,
+    }
   );
 
   const sessions = Array.isArray(res?.sessions) ? res.sessions : [];
