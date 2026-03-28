@@ -59,3 +59,29 @@ export async function getOpsEvents(limit = 25): Promise<OpsEvent[]> {
     };
   });
 }
+
+export async function getLatestOpsEventByName(name: string): Promise<OpsEvent | null> {
+  const db = requireEnv("NOTION_OPS_EVENTS_DB");
+  const res = await notionQueryDatabase(db, {
+    page_size: 1,
+    sorts: [{ property: "Time", direction: "descending" }],
+    filter: {
+      property: "Name",
+      title: { equals: name },
+    },
+  });
+
+  const page = (res.results as Array<any>)[0];
+  if (!page) return null;
+  const props = page.properties ?? {};
+  return {
+    id: page.id,
+    name: plainTitle(props.Name) || "(event)",
+    time: dateStart(props.Time),
+    source: selectName(props.Source),
+    level: selectName(props.Level),
+    jobName: plainRichText(props["Job Name"]),
+    message: plainRichText(props.Message),
+    link: urlValue(props.Link),
+  };
+}

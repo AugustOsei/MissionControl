@@ -1,5 +1,5 @@
 import { getGatewayHealth } from "@/lib/openclaw/health";
-import { getSkillsInventory } from "@/lib/notion/skills";
+import { getLatestOpsEventByName } from "@/lib/notion/opsEvents";
 
 export type SystemSummary = {
   vercelCommit?: string;
@@ -36,12 +36,20 @@ export async function getSystemSummary(): Promise<SystemSummary> {
     opsEvents: Boolean(process.env.NOTION_OPS_EVENTS_DB),
   };
 
-  let skills: string[] = [];
+  let skillsCount = 0;
+  let skillsSample: string[] = [];
   try {
-    const rows = await getSkillsInventory(50);
-    skills = rows.map((r) => r.name);
+    const snap = await getLatestOpsEventByName("Skills snapshot");
+    const msg = snap?.message ?? "";
+    const parsed = JSON.parse(msg);
+    skillsCount = Number(parsed?.ready ?? parsed?.count ?? parsed?.total ?? 0) || 0;
+    skillsSample = Array.isArray(parsed?.readyNames)
+      ? parsed.readyNames.slice(0, 12)
+      : Array.isArray(parsed?.sample)
+        ? parsed.sample.slice(0, 12)
+        : [];
   } catch {
-    // ignore
+    // If snapshot doesn't exist yet, keep zeros.
   }
 
   const vercelCommit =
@@ -57,8 +65,8 @@ export async function getSystemSummary(): Promise<SystemSummary> {
       configured,
     },
     skills: {
-      count: skills.length,
-      sample: skills.slice(0, 12),
+      count: skillsCount,
+      sample: skillsSample,
     },
   };
 }
