@@ -1,31 +1,90 @@
+import Link from "next/link";
+
+import { getOpsEvents } from "@/lib/notion/opsEvents";
 import { getGatewayHealth } from "@/lib/openclaw/health";
-import { getLiveSessions } from "@/lib/openclaw/sessions";
 
 export const dynamic = "force-dynamic";
 
+function shortDate(iso?: string) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 16);
+  return d.toISOString().replace("T", " ").slice(0, 16);
+}
+
+function withinHours(iso: string | undefined, hours: number): boolean {
+  if (!iso) return false;
+  const ts = Date.parse(iso);
+  if (!Number.isFinite(ts)) return false;
+  return ts >= Date.now() - hours * 60 * 60 * 1000;
+}
+
 export default async function AgentsPage() {
-  let liveErr: string | null = null;
-  const [gw, sessions] = await Promise.all([
+  const [gw, events] = await Promise.all([
     getGatewayHealth().catch(() => ({ ok: false, status: "offline", url: undefined })),
-    getLiveSessions({ activeMinutes: 24 * 60, limit: 80 }).catch((e) => {
-      try {
-        liveErr = typeof e === "string" ? e : JSON.stringify(e, null, 2);
-      } catch {
-        liveErr = String(e);
-      }
-      return [];
-    }),
+    getOpsEvents(250).catch(() => []),
   ]);
 
-  const activeNow = sessions.filter(
-    (s) => (s.ageLabel ?? "").includes("min") || (s.ageLabel ?? "").includes("just")
-  );
+  const windowHours = 72;
+  const recent = events.filter((e) => withinHours(e.time, windowHours));
+
+  // Collapse noisy raw feed into "systems" by jobName.
+  const groups = new Map<
+    string,
+    {
+      jobName: string;
+      lastTime?: string;
+      lastLevel?: string;
+      lastMessage?: string;
+      count: number;
+      errorCount: number;
+      warnCount: number;
+      lastLink?: string;
+    }
+  >();
+
+  for (const e of recent) {
+    const job = (e.jobName || e.name || "(unknown)").trim();
+    if (!job) continue;
+
+    // Skip obvious noise.
+    const noise = job.toLowerCase().includes("heartbeat");
+    if (noise) continue;
+
+    const g = groups.get(job) ?? {
+      jobName: job,
+      count: 0,
+      errorCount: 0,
+      warnCount: 0,
+    };
+
+    g.count += 1;
+    const lvl = (e.level ?? "").toLowerCase();
+    if (lvl === "error") g.errorCount += 1;
+    if (lvl === "warn") g.warnCount += 1;
+
+    if (!g.lastTime || (e.time && Date.parse(e.time) > Date.parse(g.lastTime))) {
+      g.lastTime = e.time;
+      g.lastLevel = e.level;
+      g.lastMessage = e.message;
+      g.lastLink = e.link;
+    }
+
+    groups.set(job, g);
+  }
+
+  const systems = Array.from(groups.values())
+    .sort((a, b) => Date.parse(b.lastTime ?? "0") - Date.parse(a.lastTime ?? "0"))
+    .slice(0, 20);
+
+  const latestError = recent.find((e) => (e.level ?? "").toLowerCase() === "error") ?? null;
+  const latestDigest = recent.find((e) => (e.name ?? "").toLowerCase().includes("openclawd digest")) ?? null;
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-semibold">Agents</h1>
-        <p className="text-sm text-white/60">Purely live view from the OpenClaw gateway (no Notion).</p>
+        <p className="text-sm text-white/60">Curated runtime summary (last {windowHours}h) + recommendations.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -35,89 +94,107 @@ export default async function AgentsPage() {
           <div className="cardSub">{gw.url ?? "(not configured)"}</div>
         </div>
         <div className="card">
-          <div className="cardTitle">Sessions (24h)</div>
-          <div className="cardValue">{sessions.length}</div>
-          <div className="cardSub">recent session keys</div>
+          <div className="cardTitle">Ops events</div>
+          <div className="cardValue">{recent.length}</div>
+          <div className="cardSub">last {windowHours}h</div>
         </div>
         <div className="card">
-          <div className="cardTitle">Active now</div>
-          <div className="cardValue">{activeNow.length}</div>
-          <div className="cardSub">rough heuristic</div>
+          <div className="cardTitle">Systems</div>
+          <div className="cardValue">{systems.length}</div>
+          <div className="cardSub">grouped by job</div>
         </div>
         <div className="card">
-          <div className="cardTitle">Mode</div>
-          <div className="cardValue">Live</div>
-          <div className="cardSub">read-only</div>
+          <div className="cardTitle">Latest error</div>
+          <div className="cardValue">{latestError ? "Yes" : "None"}</div>
+          <div className="cardSub">{latestError ? shortDate(latestError.time) : "—"}</div>
         </div>
       </div>
 
-      {!process.env.OPENCLAW_GATEWAY_URL && !process.env.OPENCLAW_GATEWAY_WS_URL && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-100">
-          <div className="text-sm font-semibold">Gateway URL not configured</div>
-          <div className="mt-1 text-xs text-amber-100/80">
-            Set <span className="font-mono">OPENCLAW_GATEWAY_URL</span> (or <span className="font-mono">OPENCLAW_GATEWAY_WS_URL</span>)
-            in the Mission Control environment.
-          </div>
-        </div>
-      )}
-
-      {!process.env.OPENCLAW_GATEWAY_TOKEN && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-amber-100">
-          <div className="text-sm font-semibold">Heads up: gateway token missing</div>
-          <div className="mt-1 text-xs text-amber-100/80">
-            If your gateway requires auth (it should), set <span className="font-mono">OPENCLAW_GATEWAY_TOKEN</span> in the Mission Control env.
-          </div>
-        </div>
-      )}
-
-      {liveErr && (
+      {latestError && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-100">
-          <div className="text-sm font-semibold">Live sessions fetch failed</div>
-          <pre className="mt-1 text-[11px] font-mono text-red-100/80 break-all whitespace-pre-wrap">
-            {liveErr}
-          </pre>
-          <div className="mt-2 text-xs text-red-100/70">
-            Common causes: wrong websocket URL (needs <span className="font-mono">/ws</span>), missing token, or origin not allowlisted.
+          <div className="text-sm font-semibold">Latest error</div>
+          <div className="mt-1 text-xs font-mono text-red-100/80">{latestError.jobName || latestError.name}</div>
+          {latestError.message && <div className="mt-2 text-xs text-red-100/80">{latestError.message}</div>}
+          <div className="mt-2 text-[11px] font-mono text-red-100/60">{shortDate(latestError.time)}</div>
+          <div className="mt-2 text-xs">
+            <Link className="underline" href="/ops">Open /ops</Link>
           </div>
         </div>
       )}
 
-      <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-          <div>
-            <div className="text-sm font-semibold">Live sessions</div>
-            <div className="text-xs text-white/50">sessions.list (gateway websocket)</div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+            <div>
+              <div className="text-sm font-semibold">Recent systems</div>
+              <div className="text-xs text-white/50">Collapsed view · click through to /ops for raw</div>
+            </div>
+            <div className="text-xs text-white/50">rows: {systems.length}</div>
           </div>
-          <div className="text-xs text-white/50">rows: {sessions.length}</div>
-        </div>
 
-        <div className="divide-y divide-white/10">
-          {sessions.slice(0, 50).map((s) => (
-            <div key={s.key} className="px-4 py-3 hover:bg-white/5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm text-white/85 truncate">{s.label || s.key}</div>
-                  <div className="mt-1 text-[11px] font-mono text-white/40">
-                    {s.kind ? `${s.kind} · ` : ""}{s.agentId ? `agent:${s.agentId} · ` : ""}{s.model ? s.model : ""}
+          <div className="divide-y divide-white/10">
+            {systems.map((s) => {
+              const lvl = (s.lastLevel ?? "").toLowerCase();
+              const badge =
+                s.errorCount > 0
+                  ? "border-red-500/30 bg-red-500/10 text-red-200"
+                  : s.warnCount > 0
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
+                    : lvl === "ok"
+                      ? "border-green-500/30 bg-green-500/10 text-green-200"
+                      : "border-white/10 bg-white/5 text-white/60";
+
+              return (
+                <div key={s.jobName} className="px-4 py-3 hover:bg-white/5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm text-white/85 truncate">{s.jobName}</div>
+                      {s.lastMessage && <div className="mt-1 text-xs text-white/55 line-clamp-2">{s.lastMessage}</div>}
+                      <div className="mt-1 text-[11px] font-mono text-white/35">
+                        {shortDate(s.lastTime)} · {s.count} events · {s.errorCount} err · {s.warnCount} warn
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className={"rounded-full border px-2 py-1 text-[11px] font-mono " + badge}>
+                        {s.errorCount > 0 ? "error" : s.warnCount > 0 ? "warn" : (s.lastLevel ?? "info")}
+                      </div>
+                      {s.lastLink && (
+                        <a
+                          className="mt-2 inline-block text-[11px] font-mono text-blue-300/80 hover:text-blue-200"
+                          href={s.lastLink}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          link ↗
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="shrink-0 text-right">
-                  {s.ageLabel && <div className="text-[11px] font-mono text-white/35">{s.ageLabel}</div>}
-                  {s.tokensLabel && <div className="text-[11px] font-mono text-white/35">{s.tokensLabel}</div>}
-                </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
 
-          {sessions.length === 0 && (
-            <div className="px-4 py-8 text-center">
-              <div className="text-sm text-white/35 font-mono">No sessions returned.</div>
-              <div className="mt-2 text-xs text-white/40">
-                If the gateway is online but this stays empty, it’s usually an origin allowlist issue. The gateway must allow Mission Control’s
-                origin via <span className="font-mono">gateway.controlUi.allowedOrigins</span>.
-              </div>
+            {systems.length === 0 && (
+              <div className="px-4 py-10 text-center text-sm text-white/35 font-mono">No recent systems yet.</div>
+            )}
+          </div>
+        </div>
+
+        <div className="lg:col-span-1 rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
+          <div className="px-4 py-3 border-b border-white/10">
+            <div className="text-sm font-semibold">Recommendations</div>
+            <div className="text-xs text-white/50">OpenClawd Digest (latest)</div>
+          </div>
+          <div className="p-4">
+            {latestDigest?.message ? (
+              <pre className="text-[11px] font-mono text-white/70 whitespace-pre-wrap">{latestDigest.message}</pre>
+            ) : (
+              <div className="text-xs font-mono text-white/35">No digest logged yet.</div>
+            )}
+            <div className="mt-3 text-xs">
+              <Link className="underline" href="/ops">See /ops</Link>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
