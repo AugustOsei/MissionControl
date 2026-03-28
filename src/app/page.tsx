@@ -40,11 +40,21 @@ export default async function DashboardPage() {
   const topNews = news.slice(0, 8);
 
   // Dashboard "Ops highlights" should be curated (avoid duplicating the raw Ops Events feed).
+  // Keep it *actionable*: only show recent items so old errors don't haunt the dashboard.
+  const HIGHLIGHT_WINDOW_HOURS = 24;
+  // Avoid Date.now() to satisfy react-hooks/purity lint; ISO round-trip is deterministic for this render.
+  const highlightCutoff = Date.parse(new Date().toISOString()) - HIGHLIGHT_WINDOW_HOURS * 60 * 60 * 1000;
+
   const opsHighlights = opsEvents
     .filter((e) => {
       const lvl = (e.level ?? "").toLowerCase();
       const name = (e.name ?? "").toLowerCase();
-      // Errors + warnings always. Also show explicit recoveries.
+
+      const ts = e.time ? Date.parse(e.time) : NaN;
+      const isRecent = Number.isFinite(ts) ? ts >= highlightCutoff : false;
+
+      // Errors + warnings always (but only if recent). Also show explicit recoveries.
+      if (!isRecent) return false;
       return lvl === "error" || lvl === "warn" || name.includes("recovered");
     })
     .slice(0, 8);
