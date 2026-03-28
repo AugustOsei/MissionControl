@@ -169,6 +169,69 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* System status strip (state, not events) */}
+      <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div>
+            <div className="text-sm font-semibold">System status</div>
+            <div className="text-xs text-white/50">Last run · next run · status (Cron Monitor)</div>
+          </div>
+          <Link href="/ops" className="text-xs font-mono text-white/40 hover:text-white/60">
+            ops ↗
+          </Link>
+        </div>
+
+        <div className="divide-y divide-white/10">
+          {cronRows
+            .slice()
+            .sort((a, b) => {
+              const sa = (a.lastStatus ?? "").toLowerCase();
+              const sb = (b.lastStatus ?? "").toLowerCase();
+              if (sa === "error" && sb !== "error") return -1;
+              if (sb === "error" && sa !== "error") return 1;
+              return (a.nextRun ?? "").localeCompare(b.nextRun ?? "");
+            })
+            .slice(0, 8)
+            .map((r) => {
+              const st = (r.lastStatus ?? "").toLowerCase();
+              const tone =
+                st === "error"
+                  ? "border-red-500/30 bg-red-500/10 text-red-200"
+                  : st === "ok"
+                    ? "border-green-500/30 bg-green-500/10 text-green-200"
+                    : "border-white/10 bg-white/5 text-white/60";
+
+              return (
+                <div key={r.id} className="px-4 py-3 hover:bg-white/5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm text-white/85 truncate">{r.name}</div>
+                      <div className="mt-1 text-[11px] font-mono text-white/40">
+                        last: {shortDate(r.lastRun)} · next: {shortDate(r.nextRun)}
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className={badge(tone)}>{r.lastStatus ?? "—"}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+          {cronRows.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-white/35 font-mono">
+              No cron rows found. (Check NOTION_CRON_DB)
+            </div>
+          )}
+        </div>
+
+        {cronRows.length > 8 && (
+          <div className="px-4 py-3 text-xs text-white/45">
+            Showing 8 / {cronRows.length}. Full list in <Link className="underline" href="/ops">/ops</Link>.
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Ops-first column */}
         <div className="space-y-4">
