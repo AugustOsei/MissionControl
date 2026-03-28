@@ -93,35 +93,36 @@ export default async function AgentsPage() {
     .slice(0, 20);
 
   const latestError = recent.find((e) => (e.level ?? "").toLowerCase() === "error") ?? null;
-  const latestDigest = recent.find((e) => (e.name ?? "").toLowerCase().includes("openclawd digest")) ?? null;
+  const latestDigest =
+    recent.find((e) => (e.name ?? "").toLowerCase().includes("openclawd digest")) ?? null;
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-semibold">Agents</h1>
-        <p className="text-sm text-white/60">Curated runtime summary (last {windowHours}h) + recommendations.</p>
+        <p className="text-sm text-white/60">
+          Daily recommendations (OpenClawd Digest) + a rolled-up view of recent automation runs. Updates when cron runs and when you refresh.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <div className="card">
-          <div className="cardTitle">Gateway</div>
-          <div className="cardValue">{gw.ok ? "Online" : "Offline"}</div>
-          <div className="cardSub">{gw.url ?? "(not configured)"}</div>
+      {/* Recommendations first: this is the part you actually read. */}
+      <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/10">
+          <div className="text-sm font-semibold">OpenClawd Digest</div>
+          <div className="text-xs text-white/50">Daily ~10:00 UTC · logged to Ops Events for this page</div>
         </div>
-        <div className="card">
-          <div className="cardTitle">Ops events</div>
-          <div className="cardValue">{recent.length}</div>
-          <div className="cardSub">last {windowHours}h</div>
-        </div>
-        <div className="card">
-          <div className="cardTitle">Systems</div>
-          <div className="cardValue">{systems.length}</div>
-          <div className="cardSub">grouped by job</div>
-        </div>
-        <div className="card">
-          <div className="cardTitle">Latest error</div>
-          <div className="cardValue">{latestError ? "Yes" : "None"}</div>
-          <div className="cardSub">{latestError ? shortDate(latestError.time) : "—"}</div>
+        <div className="p-4">
+          {latestDigest?.message ? (
+            <>
+              <div className="text-[11px] font-mono text-white/35">Last updated: {shortDate(latestDigest.time)}</div>
+              <pre className="mt-3 text-[12px] leading-5 font-mono text-white/75 whitespace-pre-wrap">{latestDigest.message}</pre>
+            </>
+          ) : (
+            <div className="text-xs font-mono text-white/35">No digest logged yet.</div>
+          )}
+          <div className="mt-3 text-xs">
+            <Link className="underline" href="/ops">See /ops</Link>
+          </div>
         </div>
       </div>
 
@@ -142,9 +143,9 @@ export default async function AgentsPage() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
             <div>
               <div className="text-sm font-semibold">Recent systems</div>
-              <div className="text-xs text-white/50">Collapsed view · click through to /ops for raw</div>
+              <div className="text-xs text-white/50">Grouped by job · last {windowHours}h · click /ops for raw</div>
             </div>
-            <div className="text-xs text-white/50">rows: {systems.length}</div>
+            <div className="text-xs text-white/50">{systems.length} systems</div>
           </div>
 
           <div className="divide-y divide-white/10">
@@ -157,11 +158,13 @@ export default async function AgentsPage() {
 
               const badge = hasUnrecoveredError
                 ? "border-red-500/30 bg-red-500/10 text-red-200"
-                : s.warnCount > 0
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
-                  : lvl === "ok"
-                    ? "border-green-500/30 bg-green-500/10 text-green-200"
-                    : "border-white/10 bg-white/5 text-white/60";
+                : recovered
+                  ? "border-green-500/30 bg-green-500/10 text-green-200"
+                  : s.warnCount > 0
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
+                    : lvl === "ok"
+                      ? "border-green-500/30 bg-green-500/10 text-green-200"
+                      : "border-white/10 bg-white/5 text-white/60";
 
               const statusLabel = hasUnrecoveredError
                 ? "error"
@@ -172,37 +175,43 @@ export default async function AgentsPage() {
                     : (s.lastLevel ?? "info");
 
               return (
-                <div key={s.jobName} className="px-4 py-3 hover:bg-white/5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-sm text-white/85 truncate">{s.jobName}</div>
-                      {s.lastMessage && <div className="mt-1 text-xs text-white/55 line-clamp-2">{s.lastMessage}</div>}
-                      <div className="mt-1 text-[11px] font-mono text-white/35">
-                        last: {shortDate(s.lastTime)}
-                        {s.lastErrorTime ? ` · last err: ${shortDate(s.lastErrorTime)}` : ""}
-                        {s.lastOkTime ? ` · last ok: ${shortDate(s.lastOkTime)}` : ""}
+                <details key={s.jobName} className="px-4 py-3 hover:bg-white/5">
+                  <summary className="cursor-pointer list-none">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm text-white/85 truncate">{s.jobName}</div>
+                        <div className="mt-1 text-[11px] font-mono text-white/35">
+                          last: {shortDate(s.lastTime)} · {s.errorCount} err · {s.warnCount} warn · {s.okCount} ok
+                        </div>
+                        {hasUnrecoveredError && s.lastErrorTime && (
+                          <div className="mt-1 text-[11px] font-mono text-red-200/70">last err: {shortDate(s.lastErrorTime)}</div>
+                        )}
                       </div>
-                      <div className="mt-1 text-[11px] font-mono text-white/35">
-                        {s.count} events · {s.errorCount} err · {s.warnCount} warn · {s.okCount} ok
+                      <div className="shrink-0 text-right">
+                        <div className={"rounded-full border px-2 py-1 text-[11px] font-mono " + badge}>
+                          {statusLabel}
+                        </div>
                       </div>
                     </div>
-                    <div className="shrink-0 text-right">
-                      <div className={"rounded-full border px-2 py-1 text-[11px] font-mono " + badge}>
-                        {statusLabel}
-                      </div>
+                  </summary>
+
+                  <div className="mt-3 text-xs text-white/60">
+                    {s.lastMessage ? <div className="text-white/70">{s.lastMessage}</div> : <div className="text-white/35 font-mono">No message.</div>}
+                    <div className="mt-2 text-[11px] font-mono text-white/35">
+                      {s.lastErrorTime ? `last err: ${shortDate(s.lastErrorTime)} · ` : ""}
+                      {s.lastOkTime ? `last ok: ${shortDate(s.lastOkTime)} · ` : ""}
+                      {s.count} events
+                    </div>
+                    <div className="mt-2 flex gap-3">
+                      <Link className="underline" href="/ops">Open /ops</Link>
                       {s.lastLink && (
-                        <a
-                          className="mt-2 inline-block text-[11px] font-mono text-blue-300/80 hover:text-blue-200"
-                          href={s.lastLink}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
+                        <a className="underline" href={s.lastLink} target="_blank" rel="noreferrer">
                           link ↗
                         </a>
                       )}
                     </div>
                   </div>
-                </div>
+                </details>
               );
             })}
 
@@ -212,23 +221,21 @@ export default async function AgentsPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-1 rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
-          <div className="px-4 py-3 border-b border-white/10">
-            <div className="text-sm font-semibold">Recommendations</div>
-            <div className="text-xs text-white/50">OpenClawd Digest (latest)</div>
+        <div className="lg:col-span-1 space-y-3">
+          <div className="card">
+            <div className="cardTitle">Gateway</div>
+            <div className="cardValue">{gw.ok ? "Online" : "Offline"}</div>
+            <div className="cardSub">{gw.url ?? "(not configured)"}</div>
           </div>
-          <div className="p-4">
-            {latestDigest?.message ? (
-              <>
-                <div className="text-[11px] font-mono text-white/35">{shortDate(latestDigest.time)}</div>
-                <pre className="mt-2 text-[11px] font-mono text-white/70 whitespace-pre-wrap">{latestDigest.message}</pre>
-              </>
-            ) : (
-              <div className="text-xs font-mono text-white/35">No digest logged yet.</div>
-            )}
-            <div className="mt-3 text-xs">
-              <Link className="underline" href="/ops">See /ops</Link>
-            </div>
+          <div className="card">
+            <div className="cardTitle">Ops events</div>
+            <div className="cardValue">{recent.length}</div>
+            <div className="cardSub">last {windowHours}h</div>
+          </div>
+          <div className="card">
+            <div className="cardTitle">Latest error</div>
+            <div className="cardValue">{latestError ? "Yes" : "None"}</div>
+            <div className="cardSub">{latestError ? shortDate(latestError.time) : "—"}</div>
           </div>
         </div>
       </div>
