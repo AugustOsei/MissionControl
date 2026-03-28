@@ -6,7 +6,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const { pillar, level, parentId } = await req.json();
+  const { pillar, level, parentId, quickSummary, nextAction, appUrl, repoUrl, docsUrl } = await req.json();
 
   const key = requireEnv("NOTION_API_KEY");
 
@@ -26,6 +26,23 @@ export async function PATCH(
       ? { relation: [{ id: parentId }] }
       : { relation: [] };
   }
+
+  // Text fields
+  if (quickSummary !== undefined) {
+    properties["Quick Summary"] = quickSummary
+      ? { rich_text: [{ text: { content: String(quickSummary).slice(0, 1800) } }] }
+      : { rich_text: [] };
+  }
+  if (nextAction !== undefined) {
+    properties["Next Action"] = nextAction
+      ? { rich_text: [{ text: { content: String(nextAction).slice(0, 1800) } }] }
+      : { rich_text: [] };
+  }
+
+  // URLs
+  if (appUrl !== undefined) properties["App URL"] = appUrl ? { url: String(appUrl) } : { url: null };
+  if (repoUrl !== undefined) properties["Repo URL"] = repoUrl ? { url: String(repoUrl) } : { url: null };
+  if (docsUrl !== undefined) properties["Docs URL"] = docsUrl ? { url: String(docsUrl) } : { url: null };
 
   const res = await fetch(`https://api.notion.com/v1/pages/${id}`, {
     method: "PATCH",

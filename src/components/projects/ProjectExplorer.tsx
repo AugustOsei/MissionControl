@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ProjectNode } from "@/lib/notion/projects";
-import { ProjectModal } from "@/components/projects/ProjectModal";
+import { ProjectDrawer } from "@/components/projects/ProjectDrawer";
 import { ProjectsGrid } from "@/components/projects/ProjectsGrid";
 
 export type ProjectStats = {
@@ -104,7 +104,7 @@ export function ProjectExplorer({
       <ProjectsGrid projects={allProjects} onOpen={setOpenId} />
 
       {selected && (
-        <ProjectModal
+        <ProjectDrawer
           project={selected}
           dbLabel={dbLabel}
           projects={allProjects}
@@ -112,7 +112,7 @@ export function ProjectExplorer({
           levelOptions={levelOptions}
           onClose={() => setOpenId(null)}
           onProjectPatched={(next) => {
-            // Keep the modal open on the same project.
+            // Keep the drawer open on the same project.
             setOpenId(next.id);
           }}
         />
