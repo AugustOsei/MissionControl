@@ -72,6 +72,19 @@ const NAV = [
     ),
   },
   {
+    href: "/pulse",
+    label: "Pulse",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <path d="M2 9.5c2.2-4.8 3.7-4.8 5.2 0 1.4 4.2 2.6 4.2 4.8-3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
+        <path d="M1.5 12.5h13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.35" />
+        <circle cx="3.2" cy="9.3" r="1" fill="currentColor" opacity="0.35" />
+        <circle cx="7.2" cy="9.3" r="1" fill="currentColor" opacity="0.35" />
+        <circle cx="12" cy="5.8" r="1" fill="currentColor" opacity="0.35" />
+      </svg>
+    ),
+  },
+  {
     href: "/ideas",
     label: "Ideas",
     icon: (
