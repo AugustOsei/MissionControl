@@ -25,7 +25,7 @@ export default async function PulsePage() {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-semibold">Pulse</h1>
-        <p className="text-sm text-white/60">Trending chatter (last 72h). Fast scan, zero commitment.</p>
+        <p className="text-sm text-white/60">Trending chatter scan (HN, last 72h). Updates on refresh / cache window.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

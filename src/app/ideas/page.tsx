@@ -14,7 +14,7 @@ export default async function IdeasPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Ideas</h1>
-          <p className="text-sm text-white/60">Dump thoughts here. Convert later.</p>
+          <p className="text-sm text-white/60">Idea inbox (Notion-backed). Capture fast, convert into tasks when ready. Updates on refresh.</p>
         </div>
       </div>
 
