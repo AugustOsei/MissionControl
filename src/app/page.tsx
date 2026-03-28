@@ -370,16 +370,7 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-            <div className="text-sm font-semibold">Next moves</div>
-            <div className="mt-2 text-sm text-white/65 leading-relaxed">
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Approve 1–2 link posts in Notion (Status: Ready) to trigger draft generation.</li>
-                <li>Keep an eye on Ops alerts; anything error should be triaged fast.</li>
-                <li>Use Projects grid to keep links/docs centralized.</li>
-              </ul>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
