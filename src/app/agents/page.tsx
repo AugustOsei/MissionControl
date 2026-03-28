@@ -8,7 +8,11 @@ export default async function AgentsPage() {
   const [gw, sessions] = await Promise.all([
     getGatewayHealth().catch(() => ({ ok: false, status: "offline", url: undefined })),
     getLiveSessions({ activeMinutes: 24 * 60, limit: 80 }).catch((e) => {
-      liveErr = String(e);
+      try {
+        liveErr = typeof e === "string" ? e : JSON.stringify(e, null, 2);
+      } catch {
+        liveErr = String(e);
+      }
       return [];
     }),
   ]);
@@ -69,7 +73,9 @@ export default async function AgentsPage() {
       {liveErr && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-100">
           <div className="text-sm font-semibold">Live sessions fetch failed</div>
-          <div className="mt-1 text-xs font-mono text-red-100/80 break-all">{liveErr}</div>
+          <pre className="mt-1 text-[11px] font-mono text-red-100/80 break-all whitespace-pre-wrap">
+            {liveErr}
+          </pre>
           <div className="mt-2 text-xs text-red-100/70">
             Common causes: wrong websocket URL (needs <span className="font-mono">/ws</span>), missing token, or origin not allowlisted.
           </div>
