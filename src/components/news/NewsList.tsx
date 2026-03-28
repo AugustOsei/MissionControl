@@ -33,6 +33,7 @@ export function NewsList({ items }: { items: NewsItem[] }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [wpDraft, setWpDraft] = useState<Record<string, string>>({});
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -76,6 +77,7 @@ export function NewsList({ items }: { items: NewsItem[] }) {
           const next = { ...x } as any;
           if (body.approved !== undefined) next.approved = Boolean(body.approved);
           if (body.status !== undefined) next.status = body.status;
+          if (body.wordpressUrl !== undefined) next.wordpressUrl = body.wordpressUrl || undefined;
           return next;
         }),
       );
@@ -189,8 +191,23 @@ export function NewsList({ items }: { items: NewsItem[] }) {
 
                   <div className="col-span-7 min-w-0">
                     <div className="text-sm text-white/85 line-clamp-2">{x.title}</div>
-                    <div className="mt-1 text-[11px] font-mono text-white/45">
-                      {(x.source ?? "source?")}{x.pillar ? ` · ${x.pillar}` : ""}
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] font-mono text-white/45">
+                      <span>{(x.source ?? "source?")}{x.pillar ? ` · ${x.pillar}` : ""}</span>
+                      {x.status && (
+                        <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/60">
+                          {x.status}
+                        </span>
+                      )}
+                      {Boolean(x.approved) && (
+                        <span className="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-green-200">
+                          approved
+                        </span>
+                      )}
+                      {x.wordpressUrl && (
+                        <span className="rounded-full border border-purple-500/25 bg-purple-500/10 px-2 py-0.5 text-purple-200">
+                          wp linked
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -206,17 +223,33 @@ export function NewsList({ items }: { items: NewsItem[] }) {
                         wp
                       </a>
                     )}
-                    <button
-                      disabled={busyId === x.id}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        patch(x.id, { approved: true, status: "Ready" });
-                      }}
-                      className="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-green-200 hover:bg-green-500/15 disabled:opacity-40"
-                    >
-                      approve
-                    </button>
+                    {!Boolean(x.approved) && (
+                      <button
+                        disabled={busyId === x.id}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          patch(x.id, { approved: true, status: "Ready" });
+                        }}
+                        className="rounded-full border border-green-500/25 bg-green-500/10 px-2 py-0.5 text-green-200 hover:bg-green-500/15 disabled:opacity-40"
+                      >
+                        approve
+                      </button>
+                    )}
+
+                    {Boolean(x.approved) && !x.wordpressUrl && (
+                      <button
+                        disabled={busyId === x.id}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setOpenId(x.id);
+                        }}
+                        className="rounded-full border border-purple-500/25 bg-purple-500/10 px-2 py-0.5 text-purple-200 hover:bg-purple-500/15 disabled:opacity-40"
+                      >
+                        add wp
+                      </button>
+                    )}
                     <button
                       disabled={busyId === x.id}
                       onClick={(e) => {
@@ -262,7 +295,21 @@ export function NewsList({ items }: { items: NewsItem[] }) {
                         </div>
                       )}
 
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      <div className="mt-3 flex flex-col gap-3">
+                        {/* Completion loop */}
+                        <div className="rounded-lg border border-white/10 bg-black/40 p-3">
+                          <div className="text-xs font-mono text-white/50">Completion loop</div>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-mono">
+                            <span className={"rounded-full border px-2 py-0.5 " + (!x.approved ? "border-blue-500/30 bg-blue-500/10 text-blue-200" : "border-white/10 bg-white/5 text-white/50")}>1) candidate</span>
+                            <span className={"rounded-full border px-2 py-0.5 " + (x.approved && !x.wordpressUrl ? "border-blue-500/30 bg-blue-500/10 text-blue-200" : "border-white/10 bg-white/5 text-white/50")}>2) approved</span>
+                            <span className={"rounded-full border px-2 py-0.5 " + (x.wordpressUrl ? "border-green-500/30 bg-green-500/10 text-green-200" : "border-white/10 bg-white/5 text-white/50")}>3) published</span>
+                          </div>
+                          <div className="mt-2 text-xs text-white/45">
+                            Next: {!x.approved ? "Approve" : x.wordpressUrl ? "Done" : "Link the WordPress URL when posted"}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
                         {x.canonicalUrl && (
                           <a
                             href={x.canonicalUrl}
@@ -296,8 +343,38 @@ export function NewsList({ items }: { items: NewsItem[] }) {
                       </div>
 
                       <div className="mt-2 text-[11px] font-mono text-white/35">
-                        Tip: once the writer job runs, it should populate <span className="text-white/50">WordPress URL</span>. You’ll access the finished post from the <span className="text-white/50">Approved</span> tab.
+                        Tip: link-post generation may populate a draft/notes, but WordPress URL is the canonical “it’s live” signal.
                       </div>
+
+                      {/* WordPress URL linker */}
+                      {Boolean(x.approved) && !x.wordpressUrl && (
+                        <div className="mt-3 rounded-lg border border-purple-500/25 bg-purple-500/10 p-3">
+                          <div className="text-xs font-mono text-purple-200">Link WordPress URL</div>
+                          <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center">
+                            <input
+                              value={wpDraft[x.id] ?? ""}
+                              onChange={(e) => setWpDraft((cur) => ({ ...cur, [x.id]: e.target.value }))}
+                              placeholder="https://your-site.com/..."
+                              className="w-full md:flex-1 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white/80 placeholder:text-white/25 outline-none focus:border-purple-500/40 focus:ring-1 focus:ring-purple-500/20 transition-colors font-mono"
+                            />
+                            <button
+                              disabled={busyId === x.id}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                const v = (wpDraft[x.id] ?? "").trim();
+                                patch(x.id, { wordpressUrl: v || null, status: v ? "Published" : x.status });
+                              }}
+                              className="rounded-lg border border-purple-500/25 bg-purple-500/10 px-3 py-2 text-xs font-mono text-purple-200 hover:bg-purple-500/15 disabled:opacity-40"
+                            >
+                              save
+                            </button>
+                          </div>
+                          <div className="mt-2 text-[11px] font-mono text-purple-100/70">
+                            This moves the item to “Published” and lights up the WP link.
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     </div>
                   </div>
                 )}

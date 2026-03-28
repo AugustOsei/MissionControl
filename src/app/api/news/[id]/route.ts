@@ -6,9 +6,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const { approved, status } = await req.json();
+  const { approved, status, wordpressUrl } = await req.json();
 
-  if (approved === undefined && status === undefined) {
+  if (approved === undefined && status === undefined && wordpressUrl === undefined) {
     return NextResponse.json({ error: "at least one field is required" }, { status: 400 });
   }
 
@@ -17,6 +17,9 @@ export async function PATCH(
   const properties: any = {};
   if (approved !== undefined) properties.Approved = { checkbox: Boolean(approved) };
   if (status !== undefined) properties.Status = { select: status ? { name: String(status) } : null };
+  if (wordpressUrl !== undefined) {
+    properties["WordPress URL"] = wordpressUrl ? { url: String(wordpressUrl) } : { url: null };
+  }
 
   const res = await fetch(`https://api.notion.com/v1/pages/${id}`,
     {
