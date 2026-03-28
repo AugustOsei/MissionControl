@@ -146,23 +146,24 @@ export default async function DashboardPage() {
     </div>
 
       {/* Executive strip */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <div className="card">
+      {/* Executive strip: keep a stable 2x2 on medium screens so it doesn't do a weird 3+1 wrap */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="card min-h-[92px]">
           <div className="cardTitle">Gateway</div>
           <div className="cardValue">{gw.ok ? "Online" : "Offline"}</div>
           <div className="cardSub">{gw.url ?? "(not configured)"}</div>
         </div>
-        <div className="card">
+        <div className="card min-h-[92px]">
           <div className="cardTitle">Cron</div>
           <div className="cardValue">{cronSummary.total}</div>
           <div className="cardSub">ok: {cronSummary.ok} · error: {cronSummary.error}</div>
         </div>
-        <div className="card">
+        <div className="card min-h-[92px]">
           <div className="cardTitle">Ops events</div>
           <div className="cardValue">{opsEvents.length}</div>
           <div className="cardSub">last 20</div>
         </div>
-        <div className="card">
+        <div className="card min-h-[92px]">
           <div className="cardTitle">News</div>
           <div className="cardValue">{news.length}</div>
           <div className="cardSub">last 30</div>
@@ -245,7 +246,7 @@ export default async function DashboardPage() {
                 view ↗
               </Link>
             </div>
-            <div className="divide-y divide-white/10">
+            <div className="divide-y divide-white/10 max-h-[420px] overflow-auto">
               {opsHighlights.map((e) => {
                 const lvl = (e.level ?? "").toLowerCase();
                 const tone =
@@ -310,7 +311,7 @@ export default async function DashboardPage() {
 
             <div className="mt-3">
               <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Doing</div>
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 space-y-2 max-h-[220px] overflow-auto pr-1">
                 {doing.map((t) => (
                   <div key={t.id} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
                     <div className="text-sm text-white/80 truncate">{t.title}</div>
@@ -327,7 +328,7 @@ export default async function DashboardPage() {
 
             <div className="mt-4">
               <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">P0/P1</div>
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 space-y-2 max-h-[220px] overflow-auto pr-1">
                 {p0p1.map((t) => (
                   <div key={t.id} className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
                     <div className="text-sm text-white/80 truncate">{t.title}</div>
@@ -354,7 +355,7 @@ export default async function DashboardPage() {
                 news ↗
               </Link>
             </div>
-            <div className="divide-y divide-white/10">
+            <div className="divide-y divide-white/10 max-h-[320px] overflow-auto">
               {topNews.map((x) => (
                 <div key={x.id} className="px-4 py-3 hover:bg-white/5">
                   <div className="text-sm text-white/85 line-clamp-2">{x.title}</div>
