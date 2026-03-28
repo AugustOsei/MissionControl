@@ -39,7 +39,10 @@ export default async function AgentsPage() {
       count: number;
       errorCount: number;
       warnCount: number;
+      okCount: number;
       lastLink?: string;
+      lastErrorTime?: string;
+      lastOkTime?: string;
     }
   >();
 
@@ -56,12 +59,24 @@ export default async function AgentsPage() {
       count: 0,
       errorCount: 0,
       warnCount: 0,
+      okCount: 0,
     };
 
     g.count += 1;
     const lvl = (e.level ?? "").toLowerCase();
-    if (lvl === "error") g.errorCount += 1;
+    if (lvl === "error") {
+      g.errorCount += 1;
+      if (!g.lastErrorTime || (e.time && Date.parse(e.time) > Date.parse(g.lastErrorTime))) {
+        g.lastErrorTime = e.time;
+      }
+    }
     if (lvl === "warn") g.warnCount += 1;
+    if (lvl === "ok") {
+      g.okCount += 1;
+      if (!g.lastOkTime || (e.time && Date.parse(e.time) > Date.parse(g.lastOkTime))) {
+        g.lastOkTime = e.time;
+      }
+    }
 
     if (!g.lastTime || (e.time && Date.parse(e.time) > Date.parse(g.lastTime))) {
       g.lastTime = e.time;
@@ -135,14 +150,26 @@ export default async function AgentsPage() {
           <div className="divide-y divide-white/10">
             {systems.map((s) => {
               const lvl = (s.lastLevel ?? "").toLowerCase();
-              const badge =
-                s.errorCount > 0
-                  ? "border-red-500/30 bg-red-500/10 text-red-200"
+              const hasUnrecoveredError =
+                Boolean(s.lastErrorTime) &&
+                (!s.lastOkTime || Date.parse(s.lastOkTime) < Date.parse(s.lastErrorTime ?? "0"));
+              const recovered = Boolean(s.lastErrorTime) && !hasUnrecoveredError;
+
+              const badge = hasUnrecoveredError
+                ? "border-red-500/30 bg-red-500/10 text-red-200"
+                : s.warnCount > 0
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
+                  : lvl === "ok"
+                    ? "border-green-500/30 bg-green-500/10 text-green-200"
+                    : "border-white/10 bg-white/5 text-white/60";
+
+              const statusLabel = hasUnrecoveredError
+                ? "error"
+                : recovered
+                  ? "recovered"
                   : s.warnCount > 0
-                    ? "border-amber-500/30 bg-amber-500/10 text-amber-200"
-                    : lvl === "ok"
-                      ? "border-green-500/30 bg-green-500/10 text-green-200"
-                      : "border-white/10 bg-white/5 text-white/60";
+                    ? "warn"
+                    : (s.lastLevel ?? "info");
 
               return (
                 <div key={s.jobName} className="px-4 py-3 hover:bg-white/5">
@@ -151,12 +178,17 @@ export default async function AgentsPage() {
                       <div className="text-sm text-white/85 truncate">{s.jobName}</div>
                       {s.lastMessage && <div className="mt-1 text-xs text-white/55 line-clamp-2">{s.lastMessage}</div>}
                       <div className="mt-1 text-[11px] font-mono text-white/35">
-                        {shortDate(s.lastTime)} · {s.count} events · {s.errorCount} err · {s.warnCount} warn
+                        last: {shortDate(s.lastTime)}
+                        {s.lastErrorTime ? ` · last err: ${shortDate(s.lastErrorTime)}` : ""}
+                        {s.lastOkTime ? ` · last ok: ${shortDate(s.lastOkTime)}` : ""}
+                      </div>
+                      <div className="mt-1 text-[11px] font-mono text-white/35">
+                        {s.count} events · {s.errorCount} err · {s.warnCount} warn · {s.okCount} ok
                       </div>
                     </div>
                     <div className="shrink-0 text-right">
                       <div className={"rounded-full border px-2 py-1 text-[11px] font-mono " + badge}>
-                        {s.errorCount > 0 ? "error" : s.warnCount > 0 ? "warn" : (s.lastLevel ?? "info")}
+                        {statusLabel}
                       </div>
                       {s.lastLink && (
                         <a
@@ -187,7 +219,10 @@ export default async function AgentsPage() {
           </div>
           <div className="p-4">
             {latestDigest?.message ? (
-              <pre className="text-[11px] font-mono text-white/70 whitespace-pre-wrap">{latestDigest.message}</pre>
+              <>
+                <div className="text-[11px] font-mono text-white/35">{shortDate(latestDigest.time)}</div>
+                <pre className="mt-2 text-[11px] font-mono text-white/70 whitespace-pre-wrap">{latestDigest.message}</pre>
+              </>
             ) : (
               <div className="text-xs font-mono text-white/35">No digest logged yet.</div>
             )}
