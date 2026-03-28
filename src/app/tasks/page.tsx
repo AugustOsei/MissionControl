@@ -30,7 +30,7 @@ export default async function TasksPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Tasks</h1>
-          <p className="text-sm text-white/60">Mission Control is the editor. Notion is storage.</p>
+          <p className="text-sm text-white/60">Your working queue. Updates on refresh (Notion-backed).</p>
         </div>
       </div>
 

@@ -13,6 +13,11 @@ export function requireEnv(name: string): string {
 export async function notionFetch(path: string, init?: RequestInit) {
   const key = requireEnv("NOTION_API_KEY");
 
+  // Default: keep Notion reads reasonably fresh without hammering the API.
+  // Override via NOTION_REVALIDATE_SECONDS (set 0 to disable caching).
+  const revalidateSeconds = Number(process.env.NOTION_REVALIDATE_SECONDS ?? "120");
+  const useCache = Number.isFinite(revalidateSeconds) && revalidateSeconds > 0;
+
   const res = await fetch(`https://api.notion.com/v1${path}`, {
     ...init,
     headers: {
@@ -21,7 +26,7 @@ export async function notionFetch(path: string, init?: RequestInit) {
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
-    cache: "no-store",
+    ...(useCache ? { next: { revalidate: revalidateSeconds } } : { cache: "no-store" }),
   });
 
   if (!res.ok) {

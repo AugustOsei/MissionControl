@@ -37,7 +37,7 @@ export default async function OpsPage() {
       <div>
         <h1 className="text-xl font-semibold">Ops</h1>
         <p className="text-sm text-white/60">
-          Ops snapshot (Gateway) + Cron Monitor (Notion).
+          Raw truth: cron status + ops events. Updates as jobs run and when you refresh.
         </p>
       </div>
 

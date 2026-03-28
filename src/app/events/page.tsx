@@ -76,7 +76,7 @@ export default async function EventsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold">Events</h1>
-        <p className="text-sm text-white/60">Unified timeline: Calendar + due dates.</p>
+        <p className="text-sm text-white/60">Unified timeline from Notion due dates (tasks + projects). Updates on refresh.</p>
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">

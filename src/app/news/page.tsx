@@ -8,8 +8,8 @@ export default async function NewsPage() {
   let err: string | null = null;
 
   try {
-    // Pull a larger window; UI will filter to last 7 days by default.
-    items = await getNewsFeed(200);
+    // Keep it reasonably small to avoid Notion rate limits; UI filters to last 7 days by default.
+    items = await getNewsFeed(120);
   } catch (e: any) {
     err = String(e);
   }
