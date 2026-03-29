@@ -1,3 +1,4 @@
+import { NewProjectLauncher } from "@/components/projects/NewProjectLauncher";
 import { ProjectExplorer } from "@/components/projects/ProjectExplorer";
 import { getProjectsTreeForDb } from "@/lib/notion/projects";
 import { PROJECT_DATABASES } from "@/lib/notion/databases";
@@ -48,14 +49,20 @@ export default async function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold">Projects</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Projects</h1>
         <p className="text-sm text-white/60">
           Project overview + progress rollups (from Tasks). Notion-backed.
         </p>
         <p className="text-xs text-white/45 font-mono mt-0.5">
           {configured.length} database{configured.length !== 1 ? "s" : ""} · updates on refresh
         </p>
+        </div>
+
+        <div className="mt-1">
+          <NewProjectLauncher />
+        </div>
       </div>
 
       {configured.length === 0 && (

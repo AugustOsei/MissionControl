@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { ProjectNode } from "@/lib/notion/projects";
 import { ProjectDrawer } from "@/components/projects/ProjectDrawer";
 import { ProjectsGrid } from "@/components/projects/ProjectsGrid";
@@ -71,7 +72,14 @@ export function ProjectExplorer({
   dbLabel: string;
   statsById?: Record<string, ProjectStats>;
 }) {
+  const search = useSearchParams();
   const [openId, setOpenId] = useState<string | null>(null);
+
+  // Allow deep-link opening a specific project drawer: /projects?open=<id>
+  useEffect(() => {
+    const id = search.get("open");
+    if (id) setOpenId(id);
+  }, [search]);
 
   const allProjects = useMemo(() => flatten(parents, statsById), [parents, statsById]);
   const selected = useMemo(

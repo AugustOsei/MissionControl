@@ -308,7 +308,7 @@ export function ProjectDrawer({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={save}
               disabled={saving}
@@ -323,6 +323,30 @@ export function ProjectDrawer({
               title="Creates a starter task skeleton linked to this project"
             >
               {planning ? "Generating…" : "Generate plan"}
+            </button>
+            <button
+              onClick={async () => {
+                setPlanning(true);
+                setPlanOk(null);
+                setError(null);
+                try {
+                  const res = await fetch(`/api/projects/${project.id}/promote`, { method: "POST" });
+                  const body = await res.json().catch(() => ({}));
+                  if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+                  setPlanOk(`Promoted ${body.promotedCount ?? 0} to Todo`);
+                  await loadTasks();
+                } catch (e: any) {
+                  setError(String(e?.message ?? e));
+                } finally {
+                  setPlanning(false);
+                  setTimeout(() => setPlanOk(null), 2500);
+                }
+              }}
+              disabled={planning}
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 hover:border-white/20 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              title="Promote the next 3 Backlog tasks (by Phase + Priority) to Todo"
+            >
+              Promote next 3
             </button>
             {ok && <div className="text-xs font-mono text-green-400">✓ Updated</div>}
             {planOk && <div className="text-xs font-mono text-green-300">✓ {planOk}</div>}
