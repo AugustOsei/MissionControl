@@ -25,3 +25,23 @@ This is a lightweight “what changed” log for fast handoffs and future upgrad
 - Agents: Added `/agents` read-only page (gateway health + agent events from Ops Events; live sessions later).
 - Notion: Seeded/filled some project summaries + URLs (Birdie/TaskCocoon/TBot/Mission Control) + Repo URLs where found.
 - Moltbook: Added `Moltbook` as a Content DB Source option and wired `scripts/moltbook_publish.py` to also log posts into Notion Content (best-effort). (Verification pending next scheduled Moltbook Daily Post run.)
+
+## 2026-03-28 → 2026-03-29
+- Dashboard: Ops highlights limited to last 24h; UI labeling added; card layout normalized; removed “Next moves” card; added **System status** strip.
+- Ops: Data freshness hints; skills snapshot surfaced as chips; weekly Cron Monitor sync added.
+- Pulse: `/pulse` page added (HN trending digest).
+- Agents: Pivoted to curated summaries + recommendations (no live gateway sessions).
+- News: Completion loop UI; WordPress URL linker; draft-ready indicator; Notion page URL exposed; link candidates cron now posts a one-line ping.
+- Projects:
+  - Project drawer (summary/links/metadata) + related tasks grouped by **Phase**.
+  - Tasks DB: added `Phase` select.
+  - Generate plan now schedules task due dates backwards from Project Due.
+  - Generate plan is idempotent (fills missing tasks; avoids duplicates).
+  - Added “Promote next 3” (Backlog → Todo).
+  - Added “New project” drawer (+ deep-link open via `?open=<id>`).
+- Reliability:
+  - Daily “System health audit” cron + Telegram failure alert.
+  - OpenClawd Digest persisted + pruned (60d) + logged to Ops Events.
+  - Skills snapshot (daily) logged to Ops Events.
+- Lint: relaxed noisy rules for dynamic parsing.
+
