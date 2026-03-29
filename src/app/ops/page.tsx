@@ -20,6 +20,10 @@ export default async function OpsPage() {
 
   const opsEvents = await getOpsEvents(25).catch(() => []);
 
+  // Data freshness hints (useful because Notion reads are cached).
+  const cronLatest = cronRows.map((r) => r.lastRun).filter(Boolean).sort().slice(-1)[0];
+  const opsLatest = opsEvents.map((e) => e.time).filter(Boolean).sort().slice(-1)[0];
+
   const now = Date.now();
   const errorRows = cronRows.filter((r) => (r.lastStatus ?? "").toLowerCase() === "error");
   const missedRows = cronRows.filter((r) => {
@@ -37,7 +41,7 @@ export default async function OpsPage() {
       <div>
         <h1 className="text-xl font-semibold">Ops</h1>
         <p className="text-sm text-white/60">
-          Raw truth: cron status + ops events. Updates as jobs run and when you refresh.
+          Raw truth: cron status + ops events. Cached reads; refresh to update. Latest: cron {shortDate(cronLatest)} · ops {shortDate(opsLatest)}
         </p>
       </div>
 
