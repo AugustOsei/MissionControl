@@ -68,11 +68,49 @@ export async function POST(
     // best effort
   }
 
+  // Idempotency: if a task with the same title already exists for this project, don't create it again.
+  const existingTitles = new Set<string>();
+  try {
+    const qres = await fetch(`https://api.notion.com/v1/databases/${tasksDb}/query`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Notion-Version": "2022-06-28",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        page_size: 200,
+        filter: {
+          property: "Project",
+          relation: { contains: projectId },
+        },
+      }),
+    });
+
+    if (qres.ok) {
+      const data = (await qres.json()) as any;
+      const results = Array.isArray(data?.results) ? data.results : [];
+      for (const page of results) {
+        const props = page?.properties ?? {};
+        const t = props?.Name?.title ?? [];
+        const title = t.map((x: any) => x?.plain_text ?? "").join("").trim();
+        if (title) existingTitles.add(title.toLowerCase());
+      }
+    }
+  } catch {
+    // best effort
+  }
+
   const tasks = planTemplate(name || "(project)");
 
   const created: string[] = [];
+  const skipped: string[] = [];
 
   for (const t of tasks) {
+    if (existingTitles.has(t.title.toLowerCase())) {
+      skipped.push(t.title);
+      continue;
+    }
     const properties: any = {
       Name: { title: [{ text: { content: t.title.slice(0, 180) } }] },
       // Tasks DB uses a Select for Status (not a Notion Status type).
@@ -113,5 +151,12 @@ export async function POST(
     if (body?.id) created.push(body.id);
   }
 
-  return NextResponse.json({ ok: true, createdCount: created.length, created });
+  return NextResponse.json({
+    ok: true,
+    createdCount: created.length,
+    skippedCount: skipped.length,
+    created,
+    skipped,
+    projectDue,
+  });
 }

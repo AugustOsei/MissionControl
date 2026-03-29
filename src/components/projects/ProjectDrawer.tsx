@@ -170,7 +170,9 @@ export function ProjectDrawer({
       }
 
       const body = await res.json().catch(() => ({}));
-      setPlanOk(`Created ${body.createdCount ?? "some"} tasks`);
+      const created = Number(body.createdCount ?? 0);
+      const skipped = Number(body.skippedCount ?? 0);
+      setPlanOk(`Plan: +${created} tasks${skipped ? ` · skipped ${skipped}` : ""}`);
       await loadTasks();
     } catch (e: any) {
       setError(String(e?.message ?? e));
@@ -320,7 +322,7 @@ export function ProjectDrawer({
               onClick={generatePlan}
               disabled={planning}
               className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 hover:border-white/20 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              title="Creates a starter task skeleton linked to this project"
+              title="Creates a starter task skeleton linked to this project. If tasks already exist, it only fills the missing ones."
             >
               {planning ? "Generating…" : "Generate plan"}
             </button>
@@ -357,7 +359,7 @@ export function ProjectDrawer({
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
               <div>
                 <div className="text-sm font-semibold">Related tasks</div>
-                <div className="text-xs text-white/50 font-mono">Notion relation: Project</div>
+                <div className="text-xs text-white/50 font-mono">Tip: set a Project Due date to auto-schedule task due dates.</div>
               </div>
               <div className="text-xs text-white/50 font-mono">{tasks ? `${tasks.length} tasks` : "loading"}</div>
             </div>
