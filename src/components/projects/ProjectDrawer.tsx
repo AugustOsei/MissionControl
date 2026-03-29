@@ -20,6 +20,8 @@ type RelatedTask = {
   status: string;
   updatedAtLabel?: string;
   priority?: string;
+  phase?: string;
+  due?: string;
 };
 
 export function ProjectDrawer({
@@ -340,17 +342,46 @@ export function ProjectDrawer({
 
             {tasks && !tasksErr && (
               <div className="divide-y divide-white/10">
-                {tasks.map((t) => (
-                  <div key={t.id} className="px-4 py-3 hover:bg-white/5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate text-sm text-white/85">{t.title}</div>
-                        <div className="mt-1 text-[11px] font-mono text-white/45">{t.status}{t.priority ? ` · ${t.priority}` : ""}</div>
+                {(() => {
+                  const order = ["Discovery", "Build", "QA", "Launch", "Follow-up", "(no phase)"];
+                  const grouped = new Map<string, RelatedTask[]>();
+                  for (const t of tasks) {
+                    const k = (t.phase ?? "").trim() || "(no phase)";
+                    grouped.set(k, [...(grouped.get(k) ?? []), t]);
+                  }
+
+                  const groups = Array.from(grouped.entries()).sort((a, b) => {
+                    const ia = order.indexOf(a[0]);
+                    const ib = order.indexOf(b[0]);
+                    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+                    return a[0].localeCompare(b[0]);
+                  });
+
+                  return groups.map(([phase, items]) => (
+                    <div key={phase} className="px-4 py-3">
+                      <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">
+                        {phase} · {items.length}
                       </div>
-                      <div className="text-[11px] font-mono text-white/35 shrink-0">{t.updatedAtLabel ?? ""}</div>
+                      <div className="mt-2 space-y-2">
+                        {items.map((t) => (
+                          <div key={t.id} className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 hover:bg-white/5">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="truncate text-sm text-white/85">{t.title}</div>
+                                <div className="mt-1 text-[11px] font-mono text-white/45">
+                                  {t.status}
+                                  {t.priority ? ` · ${t.priority}` : ""}
+                                  {t.due ? ` · due ${t.due}` : ""}
+                                </div>
+                              </div>
+                              <div className="text-[11px] font-mono text-white/35 shrink-0">{t.updatedAtLabel ?? ""}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ));
+                })()}
 
                 {tasks.length === 0 && (
                   <div className="px-4 py-6 text-xs font-mono text-white/35">No related tasks yet. Hit “Generate plan”.</div>

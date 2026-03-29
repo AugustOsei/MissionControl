@@ -14,6 +14,10 @@ function statusName(prop: any): string | undefined {
   return prop?.status?.name;
 }
 
+function dateStart(prop: any): string | undefined {
+  return prop?.date?.start;
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -42,6 +46,8 @@ export async function GET(
       title: plainTitle(titleProp) || "(untitled)",
       status: statusName(statusProp) || selectName(statusProp) || "Backlog",
       priority: selectName(props.Priority) ?? selectName(props["Priority band"]),
+      phase: selectName(props.Phase),
+      due: dateStart(props.Due),
       updatedAtLabel: updatedDate.toISOString().slice(0, 10),
     };
   });
