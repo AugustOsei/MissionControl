@@ -1,21 +1,40 @@
 import { requireEnv } from "@/lib/notion/client";
 import { NextRequest, NextResponse } from "next/server";
 
-function planTemplate(projectName: string): Array<{ title: string; status: string; priority?: string }> {
-  // Deterministic, boring on purpose. You can always refine after.
+type PlanTask = {
+  title: string;
+  status: "Backlog" | "Todo";
+  priority?: "P0" | "P1" | "P2" | "P3";
+  phase: "Discovery" | "Build" | "QA" | "Launch" | "Follow-up";
+  // due offset in days from project due (negative = before due date)
+  dueOffsetDays?: number;
+};
+
+function planTemplate(projectName: string): PlanTask[] {
+  // Deterministic + boring on purpose. You can always refine after.
   return [
-    { title: `Define success criteria for: ${projectName}`, status: "Backlog", priority: "P1" },
-    { title: `Collect requirements / constraints`, status: "Backlog", priority: "P1" },
-    { title: `Draft milestones + delivery plan`, status: "Backlog", priority: "P2" },
-    { title: `Set up repo / workspace / env`, status: "Backlog", priority: "P2" },
-    { title: `Build v1 (core workflow)`, status: "Backlog", priority: "P1" },
-    { title: `Integrations + edge cases`, status: "Backlog", priority: "P2" },
-    { title: `Observability: logging + error handling`, status: "Backlog", priority: "P2" },
-    { title: `QA pass + fix bugs`, status: "Backlog", priority: "P1" },
-    { title: `Ship / deploy`, status: "Backlog", priority: "P1" },
-    { title: `Write documentation / runbook`, status: "Backlog", priority: "P2" },
-    { title: `Post-launch check + improvements`, status: "Backlog", priority: "P3" },
+    { title: `Define success criteria for: ${projectName}`, status: "Backlog", priority: "P1", phase: "Discovery", dueOffsetDays: -18 },
+    { title: `Collect requirements / constraints`, status: "Backlog", priority: "P1", phase: "Discovery", dueOffsetDays: -16 },
+    { title: `Draft milestones + delivery plan`, status: "Backlog", priority: "P2", phase: "Discovery", dueOffsetDays: -14 },
+    { title: `Set up repo / workspace / env`, status: "Backlog", priority: "P2", phase: "Build", dueOffsetDays: -13 },
+    { title: `Build v1 (core workflow)`, status: "Backlog", priority: "P1", phase: "Build", dueOffsetDays: -10 },
+    { title: `Integrations + edge cases`, status: "Backlog", priority: "P2", phase: "Build", dueOffsetDays: -8 },
+    { title: `Observability: logging + error handling`, status: "Backlog", priority: "P2", phase: "Build", dueOffsetDays: -7 },
+    { title: `QA pass + fix bugs`, status: "Backlog", priority: "P1", phase: "QA", dueOffsetDays: -4 },
+    { title: `Ship / deploy`, status: "Backlog", priority: "P1", phase: "Launch", dueOffsetDays: -1 },
+    { title: `Write documentation / runbook`, status: "Backlog", priority: "P2", phase: "Launch", dueOffsetDays: 0 },
+    { title: `Post-launch check + improvements`, status: "Backlog", priority: "P3", phase: "Follow-up", dueOffsetDays: 2 },
   ];
+}
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d;
+}
+
+function yyyyMmDd(date: Date): string {
+  return date.toISOString().slice(0, 10);
 }
 
 export async function POST(
@@ -30,6 +49,25 @@ export async function POST(
   const key = requireEnv("NOTION_API_KEY");
   const tasksDb = requireEnv("NOTION_TASKS_DB");
 
+  // Pull project due date (used to schedule tasks backwards).
+  let projectDue: string | undefined;
+  try {
+    const pres = await fetch(`https://api.notion.com/v1/pages/${projectId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Notion-Version": "2022-06-28",
+      },
+    });
+    if (pres.ok) {
+      const page = (await pres.json()) as any;
+      const props = page?.properties ?? {};
+      projectDue = props?.Due?.date?.start ?? undefined;
+    }
+  } catch {
+    // best effort
+  }
+
   const tasks = planTemplate(name || "(project)");
 
   const created: string[] = [];
@@ -37,9 +75,16 @@ export async function POST(
   for (const t of tasks) {
     const properties: any = {
       Name: { title: [{ text: { content: t.title.slice(0, 180) } }] },
-      Status: { status: { name: t.status } },
+      // Tasks DB uses a Select for Status (not a Notion Status type).
+      Status: { select: { name: t.status } },
       Project: { relation: [{ id: projectId }] },
+      Phase: { select: { name: t.phase } },
     };
+
+    if (projectDue && t.dueOffsetDays != null) {
+      const due = yyyyMmDd(addDays(new Date(projectDue), t.dueOffsetDays));
+      properties.Due = { date: { start: due } };
+    }
 
     // Priority is optional; ignore if the property doesn't exist.
     if (t.priority) {
