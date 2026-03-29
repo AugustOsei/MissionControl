@@ -11,12 +11,14 @@ export type NewsItem = {
   canonicalUrl?: string;
   sourceUrl?: string;
   wordpressUrl?: string;
+  notionUrl?: string;
 
   submittedAt?: string;
   createdAt?: string;
   pillar?: string;
   businessValue?: string;
   approved?: boolean;
+  draftGeneratedAt?: string;
 
   notes?: string;
 };
@@ -83,12 +85,14 @@ export async function getNewsFeed(limit = 50): Promise<NewsItem[]> {
       canonicalUrl: urlValue(props["Canonical URL"]),
       sourceUrl: urlValue(props["Source URL"]),
       wordpressUrl: urlValue(props["WordPress URL"]),
+      notionUrl: page.url,
 
       submittedAt,
       createdAt: page.created_time,
       pillar: selectName(props.Pillar),
       businessValue: selectName(props["Business Value"]),
       approved: checkboxValue(props.Approved),
+      draftGeneratedAt: dateStart(props["Draft generated at"]),
       notes: richTextPlain(props.Notes),
     };
   });

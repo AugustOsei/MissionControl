@@ -21,7 +21,7 @@ function effectiveDate(x: NewsItem) {
 }
 
 function primaryUrl(x: NewsItem) {
-  return x.wordpressUrl || x.canonicalUrl || x.sourceUrl;
+  return x.wordpressUrl || x.canonicalUrl || x.sourceUrl || x.notionUrl;
 }
 
 export function NewsList({ items }: { items: NewsItem[] }) {
@@ -286,9 +286,27 @@ export function NewsList({ items }: { items: NewsItem[] }) {
                       </div>
 
                       {x.notes ? (
-                        <div className="mt-3 text-sm text-white/75 whitespace-pre-wrap leading-relaxed">
-                          {x.notes}
-                        </div>
+                        <div className="mt-3 space-y-2">
+                        {x.draftGeneratedAt && (
+                          <div className="rounded-lg border border-green-500/25 bg-green-500/10 p-3">
+                            <div className="text-xs font-mono text-green-200">Draft ready</div>
+                            <div className="mt-1 text-[11px] font-mono text-green-200/70">{shortDate(x.draftGeneratedAt)}</div>
+                            <div className="mt-2 text-xs text-green-100/80">
+                              The final draft is stored in the Notion page body.
+                            </div>
+                          </div>
+                        )}
+
+                        {x.notes ? (
+                          <div className="text-sm text-white/75 whitespace-pre-wrap leading-relaxed">
+                            {x.notes}
+                          </div>
+                        ) : (
+                          <div className="text-xs font-mono text-white/35">
+                            No notes yet. (We can auto-summarize into Notes later.)
+                          </div>
+                        )}
+                      </div>
                       ) : (
                         <div className="mt-3 text-xs font-mono text-white/35">
                           No notes yet. (We can auto-summarize into Notes later.)
