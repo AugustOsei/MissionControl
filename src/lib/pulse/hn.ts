@@ -87,8 +87,8 @@ export async function getHNPulse({
     url.searchParams.set("numericFilters", `created_at_i>${since}`);
 
     const res = await fetch(url.toString(), {
-      // Cache at the page level; this is just a hint.
-      next: { revalidate: 1800 },
+      // Keep this fairly fresh; Pulse is meant to feel "alive".
+      next: { revalidate: 300 }, // 5 min
     });
 
     if (!res.ok) continue;
