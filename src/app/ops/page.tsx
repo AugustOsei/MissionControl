@@ -94,10 +94,26 @@ export default async function OpsPage() {
           </div>
 
           <div className="rounded-xl border border-white/10 bg-black/30 p-3">
-            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Skills inventory</div>
-            <div className="mt-1 text-sm font-semibold text-white/85">{sys.skills.count} tracked</div>
-            <div className="mt-1 text-[11px] font-mono text-white/35 line-clamp-2">
-              {sys.skills.sample.length ? sys.skills.sample.join(" · ") : "—"}
+            <div className="text-[11px] font-mono text-white/40 uppercase tracking-widest">Ready skills</div>
+            <div className="mt-1 text-sm font-semibold text-white/85">{sys.skills.count} ready</div>
+
+            {sys.skills.sample.length ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {sys.skills.sample.map((s) => (
+                  <span
+                    key={s}
+                    className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-mono text-white/70"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-2 text-[11px] font-mono text-white/35">—</div>
+            )}
+
+            <div className="mt-2 text-[11px] font-mono text-white/35">
+              Updates daily via “Skills snapshot” cron.
             </div>
           </div>
         </div>
