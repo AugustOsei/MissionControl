@@ -20,6 +20,16 @@ export default async function OpsPage() {
 
   const opsEvents = await getOpsEvents(25).catch(() => []);
 
+  const upgradeScheduled = opsEvents
+    .filter((e) => (e.name ?? "").toLowerCase().includes("openclaw upgrade scheduled"))
+    .filter((e) => {
+      const t = new Date(e.time ?? "").getTime();
+      return Number.isFinite(t) && t > Date.now() - 60_000; // allow 1m skew
+    })
+    .sort((a, b) => (a.time ?? "").localeCompare(b.time ?? ""));
+
+  const nextUpgrade = upgradeScheduled[0];
+
   // Data freshness hints (useful because Notion reads are cached).
   const cronLatest = cronRows.map((r) => r.lastRun).filter(Boolean).sort().slice(-1)[0];
   const opsLatest = opsEvents.map((e) => e.time).filter(Boolean).sort().slice(-1)[0];
@@ -45,7 +55,7 @@ export default async function OpsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
         <div className="card">
           <div className="cardTitle">Gateway</div>
           <div className="cardValue">{sys.gateway.ok ? "Online" : ops.gatewayStatus}</div>
@@ -62,6 +72,11 @@ export default async function OpsPage() {
             {errorRows.length > 0 ? `${errorRows.length} error` : "0"}
           </div>
           <div className="cardSub">missed: {missedRows.length}</div>
+        </div>
+        <div className="card">
+          <div className="cardTitle">Next upgrade</div>
+          <div className="cardValue">{nextUpgrade ? shortDate(nextUpgrade.time) : "—"}</div>
+          <div className="cardSub">{nextUpgrade ? (nextUpgrade.message || nextUpgrade.jobName || "scheduled") : "none scheduled"}</div>
         </div>
         <div className="card">
           <div className="cardTitle">System</div>
