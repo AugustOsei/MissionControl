@@ -76,7 +76,11 @@ export default async function OpsPage() {
         <div className="card">
           <div className="cardTitle">Next upgrade</div>
           <div className="cardValue">{nextUpgrade ? shortDate(nextUpgrade.time) : "—"}</div>
-          <div className="cardSub">{nextUpgrade ? (nextUpgrade.message || nextUpgrade.jobName || "scheduled") : "none scheduled"}</div>
+          <div className="cardSub">
+            {nextUpgrade
+              ? `${nextUpgrade.name || "scheduled"}${nextUpgrade.message ? ` · ${nextUpgrade.message}` : nextUpgrade.jobName ? ` · ${nextUpgrade.jobName}` : ""}`
+              : "none scheduled"}
+          </div>
         </div>
         <div className="card">
           <div className="cardTitle">System</div>
