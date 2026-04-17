@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ParticleOrbHero } from "@/components/ornaments/ParticleOrbHero";
+import { LottieHero } from "@/components/ornaments/LottieHero";
 import { getNewsFeed } from "@/lib/notion/news";
 import { getOpsEvents } from "@/lib/notion/opsEvents";
 import { getCronMonitorRows, summarizeCronRows } from "@/lib/notion/crons";
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
       {/* HERO */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <ParticleOrbHero mood={mood} />
+          <LottieHero />
         </div>
 
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-4 md:p-5">
